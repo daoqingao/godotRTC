@@ -1,0 +1,55 @@
+[gd_scene load_steps=4 format=3 uid="uid://iq7kcx68qrpj"]
+
+[ext_resource type="Script" path="res://cardGame/scripts/CardManager.gd" id="1_atqh4"]
+[ext_resource type="PackedScene" uid="uid://bw0j2cm606iv" path="res://cardGame/scene/Card.tscn" id="2_njugk"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nm32r"]
+size = Vector2(258, 159)
+
+[node name="GameManager" type="Node2D"]
+
+[node name="CardManager" type="Node2D" parent="."]
+z_index = 5
+script = ExtResource("1_atqh4")
+
+[node name="CardDropArea2d" type="Area2D" parent="CardManager"]
+
+[node name="DropPosition" type="Node2D" parent="CardManager/CardDropArea2d"]
+position = Vector2(0, -153)
+
+[node name="ColorRect" type="ColorRect" parent="CardManager/CardDropArea2d"]
+offset_left = -123.0
+offset_top = -220.0
+offset_right = 121.0
+offset_bottom = -85.0
+mouse_filter = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CardManager/CardDropArea2d"]
+position = Vector2(-2, -152)
+shape = SubResource("RectangleShape2D_nm32r")
+
+[node name="CardDropArea2d2" type="Area2D" parent="CardManager"]
+position = Vector2(-210, 256)
+
+[node name="DropPosition" type="Node2D" parent="CardManager/CardDropArea2d2"]
+position = Vector2(0, -151)
+
+[node name="ColorRect" type="ColorRect" parent="CardManager/CardDropArea2d2"]
+offset_left = -123.0
+offset_top = -220.0
+offset_right = 121.0
+offset_bottom = -85.0
+mouse_filter = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CardManager/CardDropArea2d2"]
+position = Vector2(-2, -152)
+shape = SubResource("RectangleShape2D_nm32r")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="DebugCard" parent="." instance=ExtResource("2_njugk")]
+
+[connection signal="area_entered" from="CardManager/CardDropArea2d" to="CardManager" method="_on_card_drop_area_2d_area_entered"]
+[connection signal="area_exited" from="CardManager/CardDropArea2d" to="CardManager" method="_on_card_drop_area_2d_area_exited"]
+[connection signal="area_entered" from="CardManager/CardDropArea2d2" to="CardManager" method="_on_card_drop_area_2d_area_entered"]
+[connection signal="area_exited" from="CardManager/CardDropArea2d2" to="CardManager" method="_on_card_drop_area_2d_area_exited"]

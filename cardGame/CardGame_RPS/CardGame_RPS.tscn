@@ -1,0 +1,35 @@
+[gd_scene load_steps=4 format=3 uid="uid://iq7kcx68qrpj"]
+
+[ext_resource type="Script" path="res://cardGame/CardGame_RPS/CardGame_RPS.gd" id="1_d0mm0"]
+[ext_resource type="PackedScene" uid="uid://bw0j2cm606iv" path="res://fab/card/Card.tscn" id="2_st0c5"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nm32r"]
+size = Vector2(258, 159)
+
+[node name="CardGame_RPS" type="Node2D"]
+script = ExtResource("1_d0mm0")
+
+[node name="CardDropArea2d" type="Area2D" parent="."]
+position = Vector2(1, 152)
+
+[node name="DropPosition" type="Node2D" parent="CardDropArea2d"]
+position = Vector2(0, -153)
+
+[node name="ColorRect" type="ColorRect" parent="CardDropArea2d"]
+offset_left = -123.0
+offset_top = -220.0
+offset_right = 121.0
+offset_bottom = -85.0
+mouse_filter = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CardDropArea2d"]
+position = Vector2(-2, -152)
+shape = SubResource("RectangleShape2D_nm32r")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="DebugCard" parent="." instance=ExtResource("2_st0c5")]
+position = Vector2(-442, 224)
+
+[connection signal="area_entered" from="CardDropArea2d" to="." method="_on_card_drop_area_2d_area_entered"]
+[connection signal="area_exited" from="CardDropArea2d" to="." method="_on_card_drop_area_2d_area_exited"]

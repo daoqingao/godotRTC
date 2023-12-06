@@ -10,14 +10,18 @@ config_version=5
 
 [application]
 
-config/name="WebRTC Signaling Example"
+config/name="rtcSignaling"
 config/description="A WebSocket signaling server/client for WebRTC.
 This demo is devided in 4 parts.
 The protocol is text based, and composed by a command and possibly
 multiple payload arguments, each separated by a new line."
-config/tags=PackedStringArray("demo", "network", "official")
-run/main_scene="res://demo/main.tscn"
+run/main_scene="res://scene/clientScene.tscn"
 config/features=PackedStringArray("4.2")
+
+[autoload]
+
+SignalingServer="*res://server/SignalingServer.gd"
+Gamedata="*res://singleton/Gamedata.gd"
 
 [debug]
 
@@ -28,6 +32,19 @@ gdscript/warnings/unused_argument=false
 
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[input]
+
+leftClick={
+"deadzone": 0.5,
+"events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":1,"position":Vector2(183, 18),"global_position":Vector2(187, 59),"factor":1.0,"button_index":1,"canceled":false,"pressed":true,"double_click":false,"script":null)
+]
+}
+rightClick={
+"deadzone": 0.5,
+"events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":2,"position":Vector2(111, 15),"global_position":Vector2(115, 56),"factor":1.0,"button_index":2,"canceled":false,"pressed":true,"double_click":false,"script":null)
+]
+}
 
 [network]
 
