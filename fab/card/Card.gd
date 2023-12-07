@@ -19,8 +19,7 @@ var isOwner = false
 
 
 var isInDroppableArea = false
-
-
+@onready var animation = $FlipCardAnimation
 
 
 func construct(cardData):
@@ -30,7 +29,13 @@ func construct(cardData):
 	self.isOwner = cardData.isOwner
 	self.cardId = cardData.cardId
 	
-	print("am i the owner? of this card",self.isOwner, self.cardId)
+	# print("am i the owner? of this card",self.isOwner, self.cardId)
+	if(self.cardType=="ROCK"):
+		$CardFront/Type.text = "✊"
+	elif (self.cardType=="SCISSOR"):
+		$CardFront/Type.text = "✂️"
+	else:
+		$CardFront/Type.text = "📃"
 	if(self.isOwner):
 		flippedUp = true
 		$CardFront.z_index = 6
@@ -51,12 +56,7 @@ func _physics_process(delta):
 	else:
 		position = lerp(position,restSnapPos,25 * delta)
 func _ready():
-	# self.isOwner = true
-	# flippedUp = false
-	# $CardBack.scale.x = 1
-	# $CardFront.z_index = 4
-	# $CardBack.z_index = 5
-	pass # Replace with function body.
+	pass 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
@@ -66,7 +66,6 @@ func _process(delta):
 
 
 func flipCard():
-	var animation = $FlipCardAnimation
 	if(animation.is_playing()):
 		return
 	if(flippedUp):
@@ -76,6 +75,8 @@ func flipCard():
 	else:
 		animation.play("card_flip_up")	
 		flippedUp = true
+	await animation.animation_finished
+	return animation
 
 func _input(event):
 	if(!isOwner):
@@ -83,10 +84,9 @@ func _input(event):
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
 			selected = false
-			# if(newSnapPos!=null):
-			# 	restSnapPos = Vector2(newSnapPos.x,newSnapPos.y)
-			# 	newSnapPos = null
 			if(isInDroppableArea):
+				#you are dropped. sooo
+				isInDroppableArea = false
 				isPlayed.emit(self)
 func _on_input_event(viewport, event, shape_idx):
 	if(!isOwner):
@@ -95,6 +95,5 @@ func _on_input_event(viewport, event, shape_idx):
 		selected = true
 	if event.is_action_pressed("rightClick"):
 		flipCard()
-
 
 signal isPlayed(vars)
