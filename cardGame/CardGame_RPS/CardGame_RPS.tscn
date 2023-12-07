@@ -40,8 +40,10 @@ text = "Hello"
 position = Vector2(1, -80)
 
 [node name="RestartGameButton" type="Button" parent="."]
-offset_right = 8.0
-offset_bottom = 8.0
+offset_left = -439.0
+offset_top = 203.0
+offset_right = -374.0
+offset_bottom = 234.0
 text = "Restart"
 
 [connection signal="area_entered" from="CardDropArea2d" to="." method="_on_card_drop_area_2d_area_entered"]

@@ -137,10 +137,13 @@ func handleOnCardIsPlayed(card):
 func _ready():
 	# print("reading, sohuld be called twice") #gets called twice thats good.....
 	Gamedata.propagateActionToGamemanager.connect(handlePropagatedAction)
+	Gamedata.propagateActionType.rpc_id(1,"playersHandleEmitHookedupREADIED",{})
 
 func _process(delta):
 	ScoreboardText.text = "You are currently: ,"+ str(Gamedata.playerId) + "Host: "+ str(RPSRPCData.score[playerTypes.HOST]) + "CLIENT: "+ str(RPSRPCData.score[playerTypes.CLIENT]) + "TIE: "+ str(RPSRPCData.score["TIE"])
 
+func test():
+	print("test herlooo@@@@@@@@@@@@@@@@@@@@@@@")
 func startGame():
 	var hostId = RPSRPCData.hostCardsId
 	var clientId =  RPSRPCData.clientCardsId
@@ -164,9 +167,9 @@ func initializeCardsOnBot():
 	createCard(cardsOwnType[1],		Vector2(300,200),true,cardsOwnId[1])
 	createCard(cardsOwnType[2],	Vector2(500,200),true,cardsOwnId[2])
 func initializeCardsOnTop():
-	createCard(cardsOwnType[0],		Vector2(100,-200),false,cardsNotOwnId[0])
-	createCard(cardsOwnType[1],		Vector2(300,-200),false,cardsNotOwnId[1])
-	createCard(cardsOwnType[2],	Vector2(500,-200),false,cardsNotOwnId[2])
+	createCard(cardsNotOwnType[0],		Vector2(100,-200),false,cardsNotOwnId[0])
+	createCard(cardsNotOwnType[1],		Vector2(300,-200),false,cardsNotOwnId[1])
+	createCard(cardsNotOwnType[2],	Vector2(500,-200),false,cardsNotOwnId[2])
 	
 func createCard(cardType,pos,isOwner,cardId):
 	var card = Card.instantiate()

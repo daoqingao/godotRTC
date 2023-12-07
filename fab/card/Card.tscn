@@ -150,7 +150,6 @@ position = Vector2(80, 56)
 script = ExtResource("1_ectx1")
 
 [node name="Label" type="Label" parent="."]
-visible = false
 offset_left = -53.0
 offset_top = -55.0
 offset_right = -13.0
