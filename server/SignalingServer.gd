@@ -16,9 +16,11 @@ var peers: Dictionary = {}
 var devSignalingPort = 7000
 var lobbiesCreated = 0
 func _ready():
+	if (OS.get_name()=="Android"):
+		return #dont start a server if you are on android.
 	if  "--server" in OS.get_cmdline_args():
 		self.listen(devSignalingPort)
-	else:
+	else: #this is onyl for debug reasons
 		self.listen(devSignalingPort)
 		
 class Peer extends RefCounted:
@@ -168,6 +170,7 @@ func poll():
 		peers.erase(id)
 
 
+#creates a lobby only on the server side, contains the data of the peer that made it
 func _join_lobby(peer: Peer, lobby: String, mesh: bool) -> bool:
 	if lobby == "":
 		for _i in range(0, 32):

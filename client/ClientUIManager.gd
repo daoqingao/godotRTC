@@ -8,6 +8,10 @@ extends Control
 
 var finalizedPeerPlayers={}
 func _ready():
+	if(OS.get_name()=="Android"):
+		host.text = "ws://150.136.243.59:7000"
+	if(OS.get_name()=="Window"):
+		host.text = "ws://localhost:7000"
 	#signalingServer
 	client.lobby_joined.connect(self._lobby_joined)
 	client.lobby_sealed.connect(self._lobby_sealed)
@@ -26,7 +30,7 @@ func _ready():
 
 @rpc("any_peer", "call_local")
 func ping(argument):
-	#_log("[PeerRTC] Ping from peer %d: arg: %s" % [multiplayer.get_remote_sender_id(), argument])
+	# _log("[PeerRTC] Ping from peer %d: arg: %s" % [multiplayer.get_remote_sender_id(), argument])
 	_log(str(finalizedPeerPlayers))
 
 @rpc("any_peer", "call_local")

@@ -59,6 +59,7 @@ func _offer_created(type, data, id):
 	else: send_answer(id, data)
 
 
+#after a join lobby call, this is then called
 func _connected(id, use_mesh):
 	print("Connected %d, mesh: %s" % [id, use_mesh])
 	if use_mesh:
