@@ -13,10 +13,12 @@ func _ready():
 	if(OS.get_name()=="Window"):
 		host.text = "ws://localhost:7000"
 	#signalingServer
-	client.lobby_joined.connect(self._lobby_joined)
-	client.lobby_sealed.connect(self._lobby_sealed)
-	client.connected.connect(self._connected)
-	client.disconnected.connect(self._disconnected)
+	client.log.connect(self._log)
+	#all of these 4 signals are just logs. bruh
+	# client.lobby_joined.connect(self._lobby_joined)
+	# client.lobby_sealed.connect(self._lobby_sealed)
+	# client.connected.connect(self._connected)
+	# client.disconnected.connect(self._disconnected)
 
 	#rtc
 	multiplayer.connected_to_server.connect(self.peerAsClientConnectedPeerAsServer)
@@ -47,26 +49,11 @@ func peerAsClientConnectedPeerAsServer():
 	_log("[PeerRTC] (I am %d) connectd to another peer server" % client.rtc_mp.get_unique_id())
 func peerAsClientDisconnectedPeerAsServer():
 	_log("[PeerRTC] (I am %d) disconnectd to another peer server" % client.rtc_mp.get_unique_id())
-
-
 #rtc server host peer of (1), gets all of these messages. and these as usualy shoul
 func ServerPeerConnectedByPeer(id: int):
 	_log("[PeerRTC] Server/Receiver: %d connected" % id)
 func ServerPeerDisonnectedByPeer(id: int):
 	_log("[PeerRTC] Server/Receiver: %d disconnected" % id)
-
-
-
-#all clients get these when interacting with the signalling server
-func _connected(id,optional=""):
-	_log("[Signaling] Server connected with ID: %d" % id)
-func _disconnected():
-	_log("[Signaling] Server disconnected: %d - %s" % [client.code, client.reason])
-func _lobby_joined(lobby):
-	_log("[Signaling] Joined lobby %s" % lobby)
-func _lobby_sealed():
-	_log("[Signaling] Lobby has been sealed")
-
 
 func _log(msg):
 	print(msg)
@@ -77,8 +64,9 @@ func _on_peers_pressed():
 	
 func _on_ping_pressed():
 	ping.rpc(randf())
+
 func _on_seal_pressed():
-	client.seal_lobby()
+	client.handlePlayerClickSealLobby_AskServerToSeal()
 	for peer in multiplayer.get_peers():
 		finalizedPeerPlayers[peer] = {
 			peerId=peer #the struct of the player obj
@@ -88,6 +76,6 @@ func _on_seal_pressed():
 	
 	
 func _on_start_pressed():
-	client.start(host.text, room.text, mesh.button_pressed)
+	client.handlePlayerClickedStart_ConnectToSignalServer(host.text, room.text, mesh.button_pressed)
 func _on_stop_pressed():
-	client.stop()
+	client.handlePlayerClickedStopConnections_CloseAllConnection()

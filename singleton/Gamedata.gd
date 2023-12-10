@@ -15,7 +15,7 @@ func _ready():
 	get_tree().change_scene_to_file("res://cardGame/CardGame_RPS/CardGame_RPS.tscn")
 	#var tr = get_tree()
 	#var r = get_tree().current_scene
-	get_tree().change_scene_to_file("res://scene/clientScene.tscn")
+	get_tree().change_scene_to_file("res://connection/scene/ClientConnect.tscn")
 
 	pregeneratedSeed = randi() #this thing will ALWAYS BE THE SAME throughout the game
 	

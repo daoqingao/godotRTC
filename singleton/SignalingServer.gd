@@ -65,7 +65,7 @@ class Lobby extends RefCounted:
 		for p in peers.values():
 			if not p.is_ws_open():
 				continue
-			if not mesh and p.id != host:
+			if not mesh and p.id != host: #this means that only if we have 4 people, 1 host peer with 3 peers. and thats it.
 				# Only host is visible when using client-server
 				continue
 			p.send(Message.PEER_CONNECT, peer.id)
@@ -229,6 +229,7 @@ func _parse_msg(peer: Peer) -> bool:
 		return false
 
 	if msg.type in [Message.OFFER, Message.ANSWER, Message.CANDIDATE]:
+		print("[SERVER] should have 1 offer(4), 1 ans(5), idk how many ice canddiates(6) in total..", msg.type)
 		var source = MultiplayerPeer.TARGET_PEER_SERVER if peer.id == lobby.host else peer.id
 		peers[dest_id].send(msg.type, source, msg.data)
 		return true
