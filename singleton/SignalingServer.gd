@@ -16,6 +16,7 @@ var peers: Dictionary = {}
 var devSignalingPort = 7000
 var lobbiesCreated = 0
 func _ready():
+	#return #lets not use local for now. we are only using the one on OPC
 	if (OS.get_name()=="Android"):
 		return #dont start a server if you are on android.
 	if  "--server" in OS.get_cmdline_args():

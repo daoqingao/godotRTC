@@ -144,11 +144,25 @@ func handlePlayerClickedStopConnections_CloseAllConnection(): #stop connection f
 #they are sent THROUGH THE SERVER FIRST, (these offer description datas)
 
 #if you are you are host, and 3 clients, host will peer to all 3 clients, and host will get this call. 3 TIMES, EACH of 3 clients get this once to the HOST
+var stunGoogle = "stun:stun.l.google.com:19302"
+var stunMine = "stun:150.136.95.172"
+@onready var setStun = $Stun
+
 func ServerSentPeerConnectPropagatedToAllPeer_ClientTryToPeerConnect(otherPeerId):
 	log.emit("[RTC_INIT] 1 ID initializing RTC ")
+	log.emit("[Trying to connect to STUN:]" + setStun.text)
 	var peer: WebRTCPeerConnection = WebRTCPeerConnection.new()
 	peer.initialize({
-		"iceServers": [ { "urls": ["stun.l.google.com:19302"] } ]
+		"iceServers": [ 
+		{ "urls": [setStun.text],
+		 "username": 'usr',
+		  "credential": 'pwd'
+		},
+		{
+		  "urls": ['turn:150.136.95.172'],
+		  "username": 'usr',
+		  "credential": 'pwd',
+		}, ]
 	})
 	peer.session_description_created.connect(self.OnPeerSessionDescriptionCreated.bind(otherPeerId))
 	peer.ice_candidate_created.connect(self._new_ice_candidate.bind(otherPeerId))

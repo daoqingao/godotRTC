@@ -8,10 +8,11 @@ extends Control
 
 var finalizedPeerPlayers={}
 func _ready():
-	if(OS.get_name()=="Android"):
-		host.text = "ws://150.136.243.59:7000"
-	if(OS.get_name()=="Window"):
-		host.text = "ws://localhost:7000"
+	#if(OS.get_name()=="Android"):
+		#host.text = "ws://150.136.243.59:7000"
+	#if(OS.get_name()=="Windows"):
+		#host.text = "ws://localhost:7000"
+	print(OS.get_name())
 	#signalingServer
 	client.log.connect(self._log)
 	#all of these 4 signals are just logs. bruh
