@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://cpwp4xx6mv5p"]
 
 [ext_resource type="Script" path="res://connection/ClientUIManager.gd" id="1_wfphk"]
-[ext_resource type="Script" path="res://connection/wsToSignalingClient.gd" id="2_3bvx8"]
+[ext_resource type="Script" path="res://connection/SignalAndRTCServer.gd" id="2_3bvx8"]
 
 [node name="ClientUIManager" type="Control"]
 layout_mode = 3

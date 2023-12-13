@@ -8,18 +8,14 @@ extends Control
 
 var finalizedPeerPlayers={}
 func _ready():
-	#if(OS.get_name()=="Android"):
-		#host.text = "ws://150.136.243.59:7000"
-	#if(OS.get_name()=="Windows"):
-		#host.text = "ws://localhost:7000"
-	print(OS.get_name())
-	#signalingServer
+	if(OS.is_debug_build()):
+		print("starting in debug/dev mode, connecting to localhost signal server")
+		host.text = "ws://localhost:7000"
+	else:
+		host.text = "ws://150.136.243.59:7000"
+		room.text = ""
+	
 	client.log.connect(self._log)
-	#all of these 4 signals are just logs. bruh
-	# client.lobby_joined.connect(self._lobby_joined)
-	# client.lobby_sealed.connect(self._lobby_sealed)
-	# client.connected.connect(self._connected)
-	# client.disconnected.connect(self._disconnected)
 
 	#rtc
 	multiplayer.connected_to_server.connect(self.peerAsClientConnectedPeerAsServer)

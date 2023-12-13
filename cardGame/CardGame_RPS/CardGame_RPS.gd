@@ -81,8 +81,8 @@ func handlePropagatedInit(propagatedData):
 	RPSRPCData.clientId = playerList.filter(func(p): return p!=1)[0]
 	seed(propagatedData.pregeneratedSeed)
 	for i in RPSRPCData.maxTurns:
-		RPSRPCData.cardRandType[playerTypes.HOST].push_back(cardRandNumToType[randi()%2]) #can be 1 2 3 but they should be both be in sync... I hope
-		RPSRPCData.cardRandType[playerTypes.CLIENT].push_back(cardRandNumToType[randi()%2])
+		RPSRPCData.cardRandType[playerTypes.HOST].push_back(cardRandNumToType[randi()%3]) #can be 1 2 3 but they should be both be in sync... I hope
+		RPSRPCData.cardRandType[playerTypes.CLIENT].push_back(cardRandNumToType[randi()%3])
 	print("are these 2 data in sync please", RPSRPCData)
 	startGame()
 

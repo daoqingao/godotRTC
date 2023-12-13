@@ -16,14 +16,14 @@ var peers: Dictionary = {}
 var devSignalingPort = 7000
 var lobbiesCreated = 0
 func _ready():
-	#return #lets not use local for now. we are only using the one on OPC
-	if (OS.get_name()=="Android"):
-		return #dont start a server if you are on android.
-	if  "--server" in OS.get_cmdline_args():
-		self.listen(devSignalingPort)
-	else: #this is onyl for debug reasons
-		self.listen(devSignalingPort)
-		
+	#we can just make the server always start. it really doesnt matter, all matters is where you connect to
+	self.listen(devSignalingPort)
+	#if (OS.get_name()=="Android"):
+		#return #dont start a server if you are on android.
+	#if  "--server" in OS.get_cmdline_args():
+		#self.listen(devSignalingPort)
+	#else: #this is onyl for debug reasons
+		#self.listen(devSignalingPort)	
 class Peer extends RefCounted:
 	var id = -1
 	var lobby = ""
@@ -114,7 +114,7 @@ func _process(delta):
 
 
 func listen(port):
-	print("server starting listeningL: ", port)
+	print("[Local Server] server starting listening: ", port)
 	stop()
 	rand.seed = Time.get_unix_time_from_system()
 	tcp_server.listen(port)
