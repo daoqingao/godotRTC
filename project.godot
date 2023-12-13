@@ -33,6 +33,12 @@ gdscript/warnings/unused_argument=false
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[gui]
+
+theme/custom_font="res://asset/fonts/GDFontNode.tres"
+theme/default_font_multichannel_signed_distance_field=true
+theme/default_font_generate_mipmaps=true
+
 [input]
 
 leftClick={

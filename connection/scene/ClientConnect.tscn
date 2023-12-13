@@ -36,7 +36,7 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="VBoxContainer/Connect"]
 layout_mode = 2
-text = "Connect to:"
+text = "👍Connect to:"
 
 [node name="Host" type="LineEdit" parent="VBoxContainer/Connect"]
 layout_mode = 2

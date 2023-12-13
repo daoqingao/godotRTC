@@ -1,0 +1,11 @@
+[gd_resource type="FontVariation" load_steps=3 format=3 uid="uid://cy2beoe02kpnp"]
+
+[ext_resource type="FontFile" uid="uid://bs8bh6iipnp6q" path="res://asset/fonts/Outfit-Regular.ttf" id="1_dycil"]
+[ext_resource type="FontFile" uid="uid://dfeugg0bmf0il" path="res://asset/fonts/NotoColorEmoji-Regular.ttf" id="2_qebmu"]
+
+[resource]
+fallbacks = Array[Font]([ExtResource("2_qebmu")])
+base_font = ExtResource("1_dycil")
+opentype_features = {
+1667329140: 0
+}

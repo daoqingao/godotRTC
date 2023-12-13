@@ -1,8 +1,10 @@
-[gd_scene load_steps=9 format=3 uid="uid://bw0j2cm606iv"]
+[gd_scene load_steps=10 format=3 uid="uid://bw0j2cm606iv"]
 
 [ext_resource type="Script" path="res://fab/card/Card.gd" id="1_ectx1"]
 [ext_resource type="Texture2D" uid="uid://bccrv78cs3m7n" path="res://asset/Cards (large)/card_clubs_02.png" id="2_aomxi"]
 [ext_resource type="Texture2D" uid="uid://bfgtb3aux1u6r" path="res://asset/Cards (large)/card_back.png" id="3_643t1"]
+
+[sub_resource type="FontVariation" id="FontVariation_hh2rc"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nh3xx"]
 size = Vector2(40, 58)
@@ -154,18 +156,20 @@ offset_left = -53.0
 offset_top = -55.0
 offset_right = -13.0
 offset_bottom = -32.0
-text = "hi"
+text = "card data here"
 
 [node name="CardFront" type="Sprite2D" parent="."]
 z_index = 2
 texture = ExtResource("2_aomxi")
 
 [node name="Type" type="Label" parent="CardFront"]
-offset_left = -25.0
-offset_top = -23.0
-offset_right = 15.0
-scale = Vector2(2.3686, 2.9946)
-text = "rock paper or scissor"
+offset_left = -15.0
+offset_top = -29.0
+offset_right = 5.0
+offset_bottom = -8.0
+scale = Vector2(1.82008, 2.36416)
+theme_override_fonts/font = SubResource("FontVariation_hh2rc")
+text = "✂️"
 
 [node name="CardBack" type="Sprite2D" parent="."]
 z_index = 1
