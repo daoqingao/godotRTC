@@ -2,27 +2,30 @@ extends Area2D
 
 # Called when the node enters the scene tree for the first time.
 # structure for the card class...
-
 #i just call it BT (big two, because chinese poker (cp) sounds bad i dont want to keep retyping it)
 class_name BTCard
-var cardType=""
-var cardNum
-var cardImg
 
+#these models should be shared
+enum PlayerOrientation {
+	SOUTH,WEST,NORTH,EAST
+}
 
+#all of the drag and drop animation stuff below
 var selected = false
-var newSnapPos = null;
-var ownerId = 1;
-var cardId = -1;
-
 var flippedUp = true; #anything at card front z-index 6 is up, 4 is down
 var restSnapPos:Vector2 = Vector2.ZERO;
-var isOwner = false
-
-var cardData = null
 var isInDroppableArea = false
 @onready var animation = $FlipCardAnimation
 
+
+#chinese poker related things
+var suit := ""
+var rank := ""
+var id := -1
+
+var isOwnedByCurrentPlayer = false
+var ownerPlayerId = -1
+var orientation = 0
 
 func construct(cardData):
 	# self.position = cardData.cardPos
@@ -49,29 +52,65 @@ func construct(cardData):
 	# 	$CardFront.z_index = 4
 	# 	$CardBack.z_index = 5
 	
-	$MultiplayerSynchronizer.set_multiplayer_authority(cardData.ownerId)
+	# $MultiplayerSynchronizer.set_multiplayer_authority(cardData.ownerId)
 
+func initBTCardType(suit,rank,id): #this like shuffling the deck physically
+	self.suit = suit
+	self.rank = rank
+	self.id = id
+	var x = load("res://asset/Cards (large)/card_clubs_03.png")
+	$CardFront.texture =  x
+	var cardNum =  "0"+rank if 	rank.is_valid_int() && rank.length() < 2 else rank
+	var cardImgPathStr = ("res://asset/Cards (large)/" +"card_" + self.suit + "_" + cardNum + ".png")
+	print(cardImgPathStr)
+	var cardImgTexture = load(cardImgPathStr)
+	$CardFront.texture = cardImgTexture
 
+func initBTCardOwner(isOwnedByCurrentPlayer,ownerPlayerId,orientation): #its like drawing the cards physically
+	self.isOwnedByCurrentPlayer = isOwnedByCurrentPlayer
+	self.ownerPlayerId = ownerPlayerId
+	self.orientation = orientation
 func _physics_process(delta):
-	isOwner = $MultiplayerSynchronizer.get_multiplayer_authority() == multiplayer.get_unique_id()
+	# isOwner = $MultiplayerSynchronizer.get_multiplayer_authority() == multiplayer.get_unique_id()
 
-	if selected and isOwner:
+	if selected and isOwnedByCurrentPlayer:
+		print("is owned and selected")
 		position = lerp(position,get_global_mouse_position(),25 * delta)
 		restSnapPos = position
-	# else:
-	# 	position = lerp(position,restSnapPos,25 * delta)
+	else:
+		position = lerp(position,restSnapPos,25 * delta)
 func _ready():
-	print("init a card.")
-	$CardFront/Type.text = "✊"
 	pass 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	$Label.text = (cardType  + str(cardId) + str(isOwner) + str($CardFront/Type.text))
+	$Label.text = rank + suit
 	pass
 
 
 
+func _to_string():
+	return "Card ID: %d, Suit: %s, Rank: %s, Is Owned by Player? %s (Player ID: %d), Orientation: %d" % [
+		id,
+		suit,
+		rank,
+		str(isOwnedByCurrentPlayer),
+		ownerPlayerId,
+		orientation,
+	]
+
+
+
+
+
+
+
+
+
+
+
+
+#all the drag and drop functionalities and flip animation stuff...
 func flipCard():
 	if(animation.is_playing()):
 		return
@@ -86,7 +125,7 @@ func flipCard():
 	return animation
 
 func _input(event):
-	if(!isOwner):
+	if(!isOwnedByCurrentPlayer):
 		return # not allowed to do anything with this card
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
@@ -96,7 +135,7 @@ func _input(event):
 				isInDroppableArea = false
 				isPlayed.emit(self)
 func _on_input_event(viewport, event, shape_idx):
-	if(!isOwner):
+	if(!isOwnedByCurrentPlayer):
 		return # not allowed to do anything with this card
 	if event.is_action_pressed("leftClick"):
 		selected = true

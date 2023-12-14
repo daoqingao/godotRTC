@@ -1,25 +1,74 @@
 extends Node2D
 #chinese poker, aka BT
+class_name ChinesePokerGameManager
+
 @onready var BTCard = preload("res://cardGame/CardGame_ChinesePoker/BTCard.tscn")
 @onready var camera = $Camera2D
+
 #CONST for this game
-enum PlayerLocation {
+
+enum PlayerOrientation {
 	SOUTH,WEST,NORTH,EAST
 }
 
-## local data that should be kept the same across all instance
-#BTData stores the data the represents the state of the game, that should be shared
-#only store the things that needs to be shared in here and nothing else to reduce bandwidth
-var BTData = {
+enum ScreenOrientation {
+	BOT,LEFT,TOP,RIGHT
 }
+const PLAYER_COUNT = 4 #ALWAYS 4, the people in the lobby is ALWAYS 4 
+const NUM_CARDS_PER_PLAYER = 13 #13 cards per play
+
+## local data that should be kept the same across all instance
+
+var CardsOnPlayersHands = { #THESE ARE ALSO THE INDEX!!!!!!! 0,1,2,3
+	PlayerOrientation.SOUTH:{},
+	PlayerOrientation.WEST:{},
+	PlayerOrientation.NORTH:{},
+	PlayerOrientation.EAST:{},
+}
+
+
+var allCards = {} # <cardid : BTCard>
+var playedCards = {} # <
+
+var allPlayerToOrientation = {} #<PlayerId : PlayerOrientation >
+var allOrientationToPlayer = {} #<PlayerOrientation, PlayerId> #idk these should be interchangable right
+
+
 var allPlayerIdList = []
+
+#this one is not the same across all instance
 var selfPlayerId = -1
+var selfPlayerOrientation = -1
+
+var selfPlayerOrientationToScreenOrientation = {
+	# PlayerOrientation.SOUTH:bot,
+	# PlayerOrientation.WEST:left,
+	# PlayerOrientation.NORTH:top,
+	# PlayerOrientation.EAST:right, #each being different depending on the self player 
+}
+
+var selfCardsOnHand = {}
+var selfCardsPosArrX = []
+# var ownCards = CardsOnPlayersHands[selfPlayerOrientation]
 
 func _ready():
 	# print("reading, sohuld be called twice") #gets called twice thats good.....
 	Gamedata.propagateActionToGamemanager.connect(handlePropagatedAction)
 	Gamedata.propagateActionType.rpc_id(1,Gamedata.ActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED,{})
-	
+
+	#stubbed data to init with 4 players
+	handlePropagatedInit({
+			peerPlayers= {
+				1:1,
+				20:2,
+				3123:3,
+				44123:4
+			},
+			pregeneratedSeed=1
+	})	
+	# Gamedata.playerId = 20 this is done in the gamedata, also need to remove that stub
+
+
 
 
 #rpc signals
@@ -34,36 +83,124 @@ func handlePropagatedCardPlayed(propagatedData):
 
 func handlePropagatedInit(propagatedData):
 	allPlayerIdList = propagatedData.peerPlayers.keys()
+	allPlayerIdList.sort() #make sure the things are consistent, because the index you are in determines the orientation
+	#0 is SOUTH, 1 is WEST, 2 IS NORTH, 3 IS EAST, (EXACTLY LIKE THE ENUM)
 	selfPlayerId = Gamedata.playerId
 	seed(propagatedData.pregeneratedSeed)
+	initAllBTCards()
 	startGame()
 
 
 
-func createCard(cardType,pos,ownerId):
-	var card = BTCard.instantiate()
-	card.construct({
-		cardType = cardType,
-		cardPos = pos,
-		ownerId = ownerId,
-	})
-	add_child(card)
-	# allCards[cardId] = card
-	# card.isPlayed.connect(handleOnCardIsPlayed)	
-	return card
-func startGame():
-	print("started game")
-	print(allPlayerIdList)
+# func createBTCard(cardType,pos,ownerId):
+# 	var card = BTCard.instantiate()
+# 	card.construct({
+# 		cardType = cardType,
+# 		cardPos = pos,
+# 		ownerId = ownerId,
+# 	})
+# 	add_child(card)
+# 	# allCards[cardId] = card
+# 	# card.isPlayed.connect(handleOnCardIsPlayed)	
+# 	return card
 
+func initAllBTCards(): 
+	return
+	
+func startGame():
+	###init the card game
+
+	#shufflign deck
+	var suits = ['hearts', 'diamonds', 'clubs', 'spades']
+	var ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+	# suits.shuffle()
+	# ranks.shuffle()
+	var temporaryCardStack = [] 
+	var countsId = 1
+	for suit in suits:
+		for rank in ranks:
+			var card = BTCard.instantiate()
+			add_child(card)
+			card.initBTCardType(suit,rank,countsId)
+			allCards[countsId] = card
+			temporaryCardStack.push_back(card)
+			countsId +=1
+	temporaryCardStack.shuffle()
+	# print("finish init all cards (shuffling the deck of cards), " ,temporaryCardStack)
+
+
+	# distributes all cards to all players.
+	print("started game #pretend we are drawing cards here")
+	# print(allPlayerIdList)
 	#initiate cards for all 4 positions!
-	var assignedOrientation = -1 
-	for playerIdListIdx in range(allPlayerIdList.size()):
+	for playerIdListIdx in range(PLAYER_COUNT):
 		var playerId = allPlayerIdList[playerIdListIdx] 
-		createCard("",Vector2(200,200)*playerIdListIdx,playerId).rotation_degrees = 90*playerIdListIdx
-		if selfPlayerId == playerId:
-			assignedOrientation = playerIdListIdx
-	print("assigned the location of, ", assignedOrientation)
-	camera.rotation_degrees = 90*assignedOrientation
+		var orientation = playerIdListIdx
+		initCardOwner(orientation,playerId,temporaryCardStack)
+		#NOTE: need to init playerid to orientation and orientation to playerid map
+	print("finish distributing all cards to all players, ", str(CardsOnPlayersHands))
+	repositionCards()
+
+func initCardOwner(orientation,playerId,temporaryCardStack):
+	#pop 13 times for each person
+	#distributing the cards here
+	var isOwnerOfCards = false
+	if selfPlayerId == playerId:
+		isOwnerOfCards = true
+		selfPlayerOrientation = orientation
+	print(selfPlayerId)
+	print(playerId)
+	print("@@@@@@@@@@@@@@ YOU ARE THE OWNER OF ", isOwnerOfCards)
+
+	for i in range(NUM_CARDS_PER_PLAYER):
+		var card = temporaryCardStack.pop_back()
+		CardsOnPlayersHands[orientation][card.id] = card
+		card.initBTCardOwner(isOwnerOfCards,playerId,orientation)
+	
+
+func repositionCards():
+	# we will go clockwise to distribute the cards
+	print("you are positioned as," , getOrientationEnumStr(selfPlayerOrientation))
+	print(selfPlayerOrientation)
+	var orientationArr = [0,1,2,3] #making sure that the OUR player in the FRONT will be FIRST AND BOTTOM
+	var firstHalf = orientationArr.slice(0, selfPlayerOrientation)
+	var secondHalf = orientationArr.slice(selfPlayerOrientation, orientationArr.size())
+	orientationArr =  secondHalf + firstHalf
+	#now, the first index will be (bottom, in relative to our screen), 
+	print(orientationArr)
+	for currentScreenPosition in range(PLAYER_COUNT): #bot left top right, in that order, the game will be played like that too.
+		var playerOrientation = orientationArr[currentScreenPosition] #first one will be selfPlayerOrientation #could be west
+		var cardsOnHand = CardsOnPlayersHands[playerOrientation]
+		if(currentScreenPosition==ScreenOrientation.BOT): #bottom
+			distributeCards(currentScreenPosition,cardsOnHand)
+		selfPlayerOrientationToScreenOrientation[playerOrientation] = currentScreenPosition
+	print(selfPlayerOrientationToScreenOrientation)
+
+func distributeCards(screenOrientation,cardsOnHand):
+	#init range is -640 to 640 
+	#goes from 0 to 1280 offset by -640
+	print("what")
+	print(cardsOnHand)
+
+	var initY = 300
+	var initX = 0
+	var offSetX = -600
+	var distance = 1280/13
+	var counter = 0
+	for cardId in cardsOnHand:
+		var card = cardsOnHand[cardId]
+		card.restSnapPos = Vector2(initX+distance*counter+offSetX,initY)
+		counter+=1  
+	
+
+
+		#bottom player first iteration.
+func getOrientationEnumStr(value):
+	return getEnumStr(PlayerOrientation,value)
+func getScreenOrientationEnumStr(value):
+	return getEnumStr(ScreenOrientation,value)
+func getEnumStr(enums,value):
+	return enums.keys()[value]
 
 # 	if(Gamedata.playerIDList == 1): #you are always on the bottom.....
 # 		camera.rotation_degrees = 0
@@ -73,9 +210,9 @@ func startGame():
 # 	initCardsOthers()
 
 # func initCardsOwn():
-# 	createCard("",Vector2.ZERO,true,Gamedata.playerId)
+# 	createBTCard("",Vector2.ZERO,true,Gamedata.playerId)
 # func initCardsOthers():
-# 	createCard("",Vector2(200,100),false,Gamedata.playerId)
+# 	createBTCard("",Vector2(200,100),false,Gamedata.playerId)
 	
 
 # ###local data
@@ -181,13 +318,13 @@ func startGame():
 
 
 # func initializeCardsOnBot():
-# 	createCard(cardsOwnType[0],		Vector2(100,200),true,cardsOwnId[0])
-# 	createCard(cardsOwnType[1],		Vector2(300,200),true,cardsOwnId[1])
-# 	createCard(cardsOwnType[2],	Vector2(500,200),true,cardsOwnId[2])
+# 	createBTCard(cardsOwnType[0],		Vector2(100,200),true,cardsOwnId[0])
+# 	createBTCard(cardsOwnType[1],		Vector2(300,200),true,cardsOwnId[1])
+# 	createBTCard(cardsOwnType[2],	Vector2(500,200),true,cardsOwnId[2])
 # func initializeCardsOnTop():
-# 	createCard(cardsNotOwnType[0],		Vector2(100,-200),false,cardsNotOwnId[0])
-# 	createCard(cardsNotOwnType[1],		Vector2(300,-200),false,cardsNotOwnId[1])
-# 	createCard(cardsNotOwnType[2],	Vector2(500,-200),false,cardsNotOwnId[2])
+# 	createBTCard(cardsNotOwnType[0],		Vector2(100,-200),false,cardsNotOwnId[0])
+# 	createBTCard(cardsNotOwnType[1],		Vector2(300,-200),false,cardsNotOwnId[1])
+# 	createBTCard(cardsNotOwnType[2],	Vector2(500,-200),false,cardsNotOwnId[2])
 	
 
 	

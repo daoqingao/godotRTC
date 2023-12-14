@@ -28,9 +28,8 @@ offset_bottom = 360.0
 mouse_filter = 1
 color = Color(0.121569, 0.121569, 0.121569, 1)
 
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
-
 [node name="DebugCards" type="Node2D" parent="."]
+visible = false
 position = Vector2(12, 250)
 
 [node name="DebugCards2" type="Node2D" parent="DebugCards"]
@@ -196,3 +195,10 @@ position = Vector2(27, 54)
 position = Vector2(184, 54)
 
 [node name="BTCards2" parent="DebugCards" instance=ExtResource("1_0ykmd")]
+
+[node name="BTCards" parent="." instance=ExtResource("1_0ykmd")]
+z_index = 1
+position = Vector2(-264, 282)
+
+[node name="BTCards2" parent="." instance=ExtResource("1_0ykmd")]
+position = Vector2(-160, 282)

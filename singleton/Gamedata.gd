@@ -19,7 +19,7 @@ enum GameType {
 
 #all player data that are involved
 var peerPlayers = {}
-var playerId = -1
+var playerId = 20
 var pregeneratedSeed 
 var playersSignalConnectedAndReadiedCount = -1
 # @onready var RPSScene = preload("res://cardGame/CardGame_RPS/CardGame_RPS.tscn")

@@ -2,3 +2,4 @@ webrtc
 .godot/
 export/
 server_node/
+*.tmp
