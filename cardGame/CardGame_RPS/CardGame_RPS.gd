@@ -21,10 +21,6 @@ var playerTypes = {
 	HOST="HOST",
 	CLIENT = "CLIENT"
 }
-var actionTypes = {
-	INIT = "INIT",
-	CARD_PLAYED="CARD_PLAYED",
-}
 
 var cardRandNumToType = {
 	0:"ROCK",
@@ -66,9 +62,9 @@ var RPSRPCData = {
 #rpc signals
 func handlePropagatedAction(actionType, newRPSData):
 	print("receives", actionType)
-	if(actionType==actionTypes.CARD_PLAYED):
+	if(actionType==Gamedata.ActionType.CARD_PLAYED):
 		handlePropagatedCardPlayed(newRPSData)
-	if(actionType==actionTypes.INIT):
+	if(actionType==Gamedata.ActionType.INIT):
 		handlePropagatedInit(newRPSData)
 
 
@@ -124,7 +120,7 @@ func handleOnCardIsPlayed(card):
 	print(RPSRPCData.cardsPlayedId)
 	if(RPSRPCData.cardsPlayedId[playerType]!= null):
 		return #not allowing you to play more cards until both are cleared
-	Gamedata.propagateActionType.rpc(actionTypes.CARD_PLAYED,{
+	Gamedata.propagateActionType.rpc(Gamedata.ActionType.CARD_PLAYED,{
 		cardIdPlayed = card.cardId,
 		playerTypeThatPlayedIt = playerType
 	})
@@ -137,7 +133,7 @@ func handleOnCardIsPlayed(card):
 func _ready():
 	# print("reading, sohuld be called twice") #gets called twice thats good.....
 	Gamedata.propagateActionToGamemanager.connect(handlePropagatedAction)
-	Gamedata.propagateActionType.rpc_id(1,"playersHandleEmitHookedupREADIED",{})
+	Gamedata.propagateActionType.rpc_id(1,Gamedata.ActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED,{})
 
 func _process(delta):
 	ScoreboardText.text = "You are currently: ,"+ str(Gamedata.playerId) + "Host: "+ str(RPSRPCData.score[playerTypes.HOST]) + "CLIENT: "+ str(RPSRPCData.score[playerTypes.CLIENT]) + "TIE: "+ str(RPSRPCData.score["TIE"])
@@ -198,4 +194,4 @@ func _on_card_drop_area_2d_area_exited(area):
 	card.isInDroppableArea = false
 
 func _on_restart_game_button_pressed():
-	Gamedata.propagateActionType.rpc("RESTART","RPS")
+	Gamedata.propagateActionType.rpc(Gamedata.ActionType.RESTART,Gamedata.GameType.RPS)

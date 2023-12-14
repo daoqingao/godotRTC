@@ -1,6 +1,6 @@
 extends Control
 
-@onready var client = $Client
+@onready var SignalRTCServer = $SignalRTCServer
 @onready var host = $VBoxContainer/Connect/Host
 @onready var room = $VBoxContainer/Connect/RoomSecret
 @onready var mesh = $VBoxContainer/Connect/Mesh
@@ -15,14 +15,14 @@ func _ready():
 		host.text = "ws://150.136.243.59:7000"
 		room.text = ""
 	
-	client.log.connect(self._log)
+	SignalRTCServer.log.connect(_log)
 
 	#rtc
 	multiplayer.connected_to_server.connect(self.peerAsClientConnectedPeerAsServer)
 	multiplayer.connection_failed.connect(self.peerAsClientDisconnectedPeerAsServer)
 	multiplayer.server_disconnected.connect(self.peerAsClientDisconnectedPeerAsServer)
 	
-	#rtc host and client
+	#rtc host and SignalRTCServer
 	multiplayer.peer_connected.connect(self.ServerPeerConnectedByPeer)
 	multiplayer.peer_disconnected.connect(self.ServerPeerDisonnectedByPeer)
 
@@ -33,19 +33,18 @@ func ping(argument):
 	_log(str(finalizedPeerPlayers))
 
 @rpc("any_peer", "call_local")
-func propagateDataFromHost(data):
+func propagateDataFromHost(data,gameType):
 	Gamedata.peerPlayers = data
 	Gamedata.playerId = multiplayer.get_unique_id()
-	Gamedata.startGame("RPS")
-	_log("requested to propagate data from host")
-	_log(str(finalizedPeerPlayers))
+	Gamedata.startGame(gameType)
+	_log("requested to start a game with"+str(finalizedPeerPlayers))
 
 
 
 func peerAsClientConnectedPeerAsServer():
-	_log("[PeerRTC] (I am %d) connectd to another peer server" % client.rtc_mp.get_unique_id())
+	_log("[PeerRTC] (I am %d) connectd to another peer server" % SignalRTCServer.rtc_mp.get_unique_id())
 func peerAsClientDisconnectedPeerAsServer():
-	_log("[PeerRTC] (I am %d) disconnectd to another peer server" % client.rtc_mp.get_unique_id())
+	_log("[PeerRTC] (I am %d) disconnectd to another peer server" % SignalRTCServer.rtc_mp.get_unique_id())
 #rtc server host peer of (1), gets all of these messages. and these as usualy shoul
 func ServerPeerConnectedByPeer(id: int):
 	_log("[PeerRTC] Server/Receiver: %d connected" % id)
@@ -63,16 +62,25 @@ func _on_ping_pressed():
 	ping.rpc(randf())
 
 func _on_seal_pressed():
-	client.handlePlayerClickSealLobby_AskServerToSeal()
+	handleSealLobby()
+	propagateDataFromHost.rpc(finalizedPeerPlayers,Gamedata.GameType.RPS)
+
+func handleSealLobby():
+	_log("Requested to seal lobby")
+	SignalRTCServer.handlePlayerClickSealLobby_AskServerToSeal()
 	for peer in multiplayer.get_peers():
 		finalizedPeerPlayers[peer] = {
 			peerId=peer #the struct of the player obj
 			}
 	finalizedPeerPlayers[multiplayer.get_unique_id()] = {peerId=multiplayer.get_unique_id()}
-	propagateDataFromHost.rpc(finalizedPeerPlayers)
 	
 	
 func _on_start_pressed():
-	client.handlePlayerClickedStart_ConnectToSignalServer(host.text, room.text, mesh.button_pressed)
+	SignalRTCServer.handlePlayerClickedStart_ConnectToSignalServer(host.text, room.text, mesh.button_pressed)
 func _on_stop_pressed():
-	client.handlePlayerClickedStopConnections_CloseAllConnection()
+	SignalRTCServer.handlePlayerClickedStopConnections_CloseAllConnection()
+
+
+func _on_chinese_poker_pressed():
+	handleSealLobby()
+	propagateDataFromHost.rpc(finalizedPeerPlayers,Gamedata.GameType.CHINESE_POKER)

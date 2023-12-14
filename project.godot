@@ -10,11 +10,8 @@ config_version=5
 
 [application]
 
-config/name="rtcSignaling"
-config/description="A WebSocket signaling server/client for WebRTC.
-This demo is devided in 4 parts.
-The protocol is text based, and composed by a command and possibly
-multiple payload arguments, each separated by a new line."
+config/name="Card Game!"
+config/description="Multiplayer Card Game!"
 run/main_scene="res://connection/scene/ClientConnect.tscn"
 config/features=PackedStringArray("4.2")
 
@@ -30,6 +27,8 @@ gdscript/warnings/unused_argument=false
 
 [display]
 
+window/size/viewport_width=1280
+window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
