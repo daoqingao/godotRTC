@@ -7,7 +7,7 @@ class_name ChinesePokerGameManager
 
 #CONST for this game
 
-enum PlayerOrientation {
+enum DirectionOrientation {
 	SOUTH,WEST,NORTH,EAST
 }
 
@@ -20,18 +20,18 @@ const NUM_CARDS_PER_PLAYER = 13 #13 cards per play
 ## local data that should be kept the same across all instance
 
 var CardsOnPlayersHands = { #THESE ARE ALSO THE INDEX!!!!!!! 0,1,2,3
-	PlayerOrientation.SOUTH:{},
-	PlayerOrientation.WEST:{},
-	PlayerOrientation.NORTH:{},
-	PlayerOrientation.EAST:{},
+	DirectionOrientation.SOUTH:{},
+	DirectionOrientation.WEST:{},
+	DirectionOrientation.NORTH:{},
+	DirectionOrientation.EAST:{},
 }
 
 
 var allCards = {} # <cardid : BTCard>
 var playedCards = {} # <
 
-var allPlayerToOrientation = {} #<PlayerId : PlayerOrientation >
-var allOrientationToPlayer = {} #<PlayerOrientation, PlayerId> #idk these should be interchangable right
+# var allPlayerToOrientation = {} #<PlayerId : DirectionOrientation >
+# var allOrientationToPlayer = {} #<DirectionOrientation, PlayerId> #idk these should be interchangable right
 
 
 var allPlayerIdList = []
@@ -40,11 +40,11 @@ var allPlayerIdList = []
 var selfPlayerId = -1
 var selfPlayerOrientation = -1
 
-var selfPlayerOrientationToScreenOrientation = {
-	# PlayerOrientation.SOUTH:bot,
-	# PlayerOrientation.WEST:left,
-	# PlayerOrientation.NORTH:top,
-	# PlayerOrientation.EAST:right, #each being different depending on the self player 
+var selfDirectionOriToScreenOri = {
+	# DirectionOrientation.SOUTH:bot,
+	# DirectionOrientation.WEST:left,
+	# DirectionOrientation.NORTH:top,
+	# DirectionOrientation.EAST:right, #each being different depending on the self player 
 }
 
 var selfCardsOnHand = {}
@@ -60,9 +60,9 @@ func _ready():
 	handlePropagatedInit({
 			peerPlayers= {
 				1:1,
-				20:2,
-				3123:3,
-				44123:4
+				20:22,
+				3333:3333,
+				4444:4444
 			},
 			pregeneratedSeed=1
 	})	
@@ -126,78 +126,73 @@ func startGame():
 			temporaryCardStack.push_back(card)
 			countsId +=1
 	temporaryCardStack.shuffle()
-	# print("finish init all cards (shuffling the deck of cards), " ,temporaryCardStack)
 
 
-	# distributes all cards to all players.
 	print("started game #pretend we are drawing cards here")
-	# print(allPlayerIdList)
-	#initiate cards for all 4 positions!
+
+	#assigning screen positions and orientations
 	for playerIdListIdx in range(PLAYER_COUNT):
 		var playerId = allPlayerIdList[playerIdListIdx] 
 		var orientation = playerIdListIdx
-		initCardOwner(orientation,playerId,temporaryCardStack)
-		#NOTE: need to init playerid to orientation and orientation to playerid map
-	print("finish distributing all cards to all players, ", str(CardsOnPlayersHands))
-	repositionCards()
+		if selfPlayerId == playerId:
+			selfPlayerOrientation = orientation #which one is you...
 
-func initCardOwner(orientation,playerId,temporaryCardStack):
-	#pop 13 times for each person
-	#distributing the cards here
-	var isOwnerOfCards = false
-	if selfPlayerId == playerId:
-		isOwnerOfCards = true
-		selfPlayerOrientation = orientation
-	print(selfPlayerId)
-	print(playerId)
-	print("@@@@@@@@@@@@@@ YOU ARE THE OWNER OF ", isOwnerOfCards)
-
-	for i in range(NUM_CARDS_PER_PLAYER):
-		var card = temporaryCardStack.pop_back()
-		CardsOnPlayersHands[orientation][card.id] = card
-		card.initBTCardOwner(isOwnerOfCards,playerId,orientation)
+	var directionOrientationArr = [
+		DirectionOrientation.SOUTH,
+		DirectionOrientation.WEST,
+		DirectionOrientation.NORTH,
+		DirectionOrientation.EAST,
+	] #making sure that the OUR player in the FRONT will be FIRST AND BOTTOM
+	var firstHalf = directionOrientationArr.slice(0, selfPlayerOrientation)
+	var secondHalf = directionOrientationArr.slice(selfPlayerOrientation, directionOrientationArr.size())
+	directionOrientationArr =  secondHalf + firstHalf
 	
 
-func repositionCards():
-	# we will go clockwise to distribute the cards
-	print("you are positioned as," , getOrientationEnumStr(selfPlayerOrientation))
-	print(selfPlayerOrientation)
-	var orientationArr = [0,1,2,3] #making sure that the OUR player in the FRONT will be FIRST AND BOTTOM
-	var firstHalf = orientationArr.slice(0, selfPlayerOrientation)
-	var secondHalf = orientationArr.slice(selfPlayerOrientation, orientationArr.size())
-	orientationArr =  secondHalf + firstHalf
-	#now, the first index will be (bottom, in relative to our screen), 
-	print(orientationArr)
-	for currentScreenPosition in range(PLAYER_COUNT): #bot left top right, in that order, the game will be played like that too.
-		var playerOrientation = orientationArr[currentScreenPosition] #first one will be selfPlayerOrientation #could be west
-		var cardsOnHand = CardsOnPlayersHands[playerOrientation]
-		if(currentScreenPosition==ScreenOrientation.BOT): #bottom
-			distributeCards(currentScreenPosition,cardsOnHand)
-		selfPlayerOrientationToScreenOrientation[playerOrientation] = currentScreenPosition
-	print(selfPlayerOrientationToScreenOrientation)
+	for currentScreenOrientation in range(PLAYER_COUNT): #bot left top right, in that order, the game will be played like that too.
+		var currentDirectionOrientation = directionOrientationArr[currentScreenOrientation] #first one will be selfPlayerOrientation #could be west and you are bot
+		selfDirectionOriToScreenOri[currentDirectionOrientation] = currentScreenOrientation
 
-func distributeCards(screenOrientation,cardsOnHand):
-	#init range is -640 to 640 
-	#goes from 0 to 1280 offset by -640
-	print("what")
-	print(cardsOnHand)
+		var playerId = allPlayerIdList[currentDirectionOrientation] #playerOrientation is interchangable with the index in the allPlayerIdList
+		distributeCards({
+			temporaryCardStack = temporaryCardStack,
+			currentDirectionOrientation = currentDirectionOrientation,
+			isOwnedByCurrentPlayer = currentScreenOrientation==ScreenOrientation.BOT,
+			playerId = playerId,
+			currentScreenOrientation = currentScreenOrientation
+		})
 
+
+
+	
+
+	#selfDirectionOriToScreenOri will be used in the future to determine where teh cards was played and spawn from where
+
+func distributeCards(data):
 	var initY = 300
 	var initX = 0
 	var offSetX = -600
 	var distance = 1280/13
 	var counter = 0
-	for cardId in cardsOnHand:
-		var card = cardsOnHand[cardId]
-		card.restSnapPos = Vector2(initX+distance*counter+offSetX,initY)
+	for i in range(NUM_CARDS_PER_PLAYER):
+		var card = data.temporaryCardStack.pop_back()
+		CardsOnPlayersHands[data.currentDirectionOrientation][card.id] = card
+		card.initBTCardOwner(data.isOwnedByCurrentPlayer,data.playerId,data.currentDirectionOrientation,data.currentScreenOrientation)
+		if(!data.isOwnedByCurrentPlayer):
+			card.restSnapPos = Vector2(initX+distance*counter+offSetX,
+			randi() % 600-300
+			)
+		else: #you do own the card so lets put it on the bottom!!!
+			card.restSnapPos = Vector2(initX+distance*counter+offSetX,initY)
 		counter+=1  
+
+
 	
 
 
 		#bottom player first iteration.
-func getOrientationEnumStr(value):
-	return getEnumStr(PlayerOrientation,value)
-func getScreenOrientationEnumStr(value):
+func getDirectionOriEnumStr(value):
+	return getEnumStr(DirectionOrientation,value)
+func getScreenOriEnumStr(value):
 	return getEnumStr(ScreenOrientation,value)
 func getEnumStr(enums,value):
 	return enums.keys()[value]

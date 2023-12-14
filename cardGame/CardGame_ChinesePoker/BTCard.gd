@@ -6,10 +6,19 @@ extends Area2D
 class_name BTCard
 
 #these models should be shared
-enum PlayerOrientation {
+enum DirectionOrientation {
 	SOUTH,WEST,NORTH,EAST
 }
 
+enum ScreenOrientation {
+	BOT,LEFT,TOP,RIGHT
+}
+func getDirectionOriEnumStr(value):
+	return getEnumStr(DirectionOrientation,value)
+func getScreenOriEnumStr(value):
+	return getEnumStr(ScreenOrientation,value)
+func getEnumStr(enums,value):
+	return enums.keys()[value]
 #all of the drag and drop animation stuff below
 var selected = false
 var flippedUp = true; #anything at card front z-index 6 is up, 4 is down
@@ -25,8 +34,9 @@ var id := -1
 
 var isOwnedByCurrentPlayer = false
 var ownerPlayerId = -1
-var orientation = 0
+var directionOrientation = 0
 
+var screenOrientation = -1
 func construct(cardData):
 	# self.position = cardData.cardPos
 	# self.restSnapPos = position
@@ -58,23 +68,21 @@ func initBTCardType(suit,rank,id): #this like shuffling the deck physically
 	self.suit = suit
 	self.rank = rank
 	self.id = id
-	var x = load("res://asset/Cards (large)/card_clubs_03.png")
-	$CardFront.texture =  x
 	var cardNum =  "0"+rank if 	rank.is_valid_int() && rank.length() < 2 else rank
 	var cardImgPathStr = ("res://asset/Cards (large)/" +"card_" + self.suit + "_" + cardNum + ".png")
-	print(cardImgPathStr)
+	# print(cardImgPathStr)
 	var cardImgTexture = load(cardImgPathStr)
 	$CardFront.texture = cardImgTexture
 
-func initBTCardOwner(isOwnedByCurrentPlayer,ownerPlayerId,orientation): #its like drawing the cards physically
+func initBTCardOwner(isOwnedByCurrentPlayer,ownerPlayerId,directionOrientation,screenOrientation): #its like drawing the cards physically
 	self.isOwnedByCurrentPlayer = isOwnedByCurrentPlayer
 	self.ownerPlayerId = ownerPlayerId
-	self.orientation = orientation
+	self.directionOrientation = directionOrientation
+	self.screenOrientation = screenOrientation
 func _physics_process(delta):
 	# isOwner = $MultiplayerSynchronizer.get_multiplayer_authority() == multiplayer.get_unique_id()
-
+	isOwnedByCurrentPlayer = true
 	if selected and isOwnedByCurrentPlayer:
-		print("is owned and selected")
 		position = lerp(position,get_global_mouse_position(),25 * delta)
 		restSnapPos = position
 	else:
@@ -84,7 +92,7 @@ func _ready():
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	$Label.text = rank + suit
+	$Label.text = str(ownerPlayerId) + getDirectionOriEnumStr(directionOrientation) + getScreenOriEnumStr(screenOrientation)
 	pass
 
 
@@ -96,7 +104,7 @@ func _to_string():
 		rank,
 		str(isOwnedByCurrentPlayer),
 		ownerPlayerId,
-		orientation,
+		directionOrientation,
 	]
 
 

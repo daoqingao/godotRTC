@@ -197,8 +197,10 @@ position = Vector2(184, 54)
 [node name="BTCards2" parent="DebugCards" instance=ExtResource("1_0ykmd")]
 
 [node name="BTCards" parent="." instance=ExtResource("1_0ykmd")]
+visible = false
 z_index = 1
 position = Vector2(-264, 282)
 
 [node name="BTCards2" parent="." instance=ExtResource("1_0ykmd")]
+visible = false
 position = Vector2(-160, 282)
