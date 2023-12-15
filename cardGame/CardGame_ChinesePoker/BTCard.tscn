@@ -151,10 +151,11 @@ scale = Vector2(2, 2)
 script = ExtResource("1_7ry17")
 
 [node name="Label" type="Label" parent="."]
-offset_left = -53.0
-offset_top = -55.0
-offset_right = -13.0
-offset_bottom = -32.0
+offset_left = -23.0
+offset_top = -39.0
+offset_right = 82.0
+offset_bottom = -16.0
+scale = Vector2(0.437062, 0.386926)
 text = "card data here"
 
 [node name="CardFront" type="Sprite2D" parent="."]

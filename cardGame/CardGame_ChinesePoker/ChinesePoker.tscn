@@ -44,6 +44,7 @@ position = Vector2(20, 20)
 shape = SubResource("RectangleShape2D_67l80")
 
 [node name="DropSnapPos" type="Node2D" parent="DropArea"]
+position = Vector2(19.9426, 19.8174)
 
 [node name="AllTestRelatedFunctionalities" type="Node2D" parent="."]
 
@@ -52,6 +53,15 @@ offset_right = 8.0
 offset_bottom = 8.0
 text = "Mock another player played a card"
 
+[node name="PlayCardsButton" type="Button" parent="."]
+offset_left = 200.0
+offset_top = 127.0
+offset_right = 351.0
+offset_bottom = 156.0
+disabled = true
+text = "Comfirm Play Cards"
+
 [connection signal="area_entered" from="DropArea" to="." method="_on_drop_area_area_entered"]
 [connection signal="area_exited" from="DropArea" to="." method="_on_drop_area_area_exited"]
 [connection signal="pressed" from="AllTestRelatedFunctionalities/MockAnotherPlayPlayedACard" to="." method="_on_button_pressed"]
+[connection signal="pressed" from="PlayCardsButton" to="." method="_on_play_cards_button_pressed"]

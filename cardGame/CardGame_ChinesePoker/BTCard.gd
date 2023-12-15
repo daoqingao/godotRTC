@@ -1,10 +1,5 @@
 extends Area2D
-
-# Called when the node enters the scene tree for the first time.
-# structure for the card class...
-#i just call it BT (big two, because chinese poker (cp) sounds bad i dont want to keep retyping it)
 class_name BTCard
-
 #these models should be shared
 enum DirectionOrientation {
 	SOUTH,WEST,NORTH,EAST
@@ -38,34 +33,11 @@ var id := -1
 var isOwnedByCurrentPlayer = false
 var ownerPlayerId = -1
 var directionOrientation = 0
-
 var screenOrientation = -1
-func construct(cardData):
-	# self.position = cardData.cardPos
-	# self.restSnapPos = position
-	# self.cardType = cardData.cardType
-	# self.isOwner = cardData.isOwner
-	# self.cardId = cardData.cardId
 
-	self.cardData = cardData
-	
-	# # print("am i the owner? of this card",self.isOwner, self.cardId)
-	# if(self.cardType=="ROCK"):
-	# elif (self.cardType=="SCISSOR"):
-	# 	$CardFront/Type.text = "✂️"
-	# else:
-	# 	$CardFront/Type.text = "📃"
-	# if(self.isOwner):
-	# 	flippedUp = true
-	# 	$CardFront.z_index = 6
-	# 	$CardBack.z_index = 5
-	# else:
-	# 	flippedUp = false
-	# 	$CardBack.scale.x = 1		
-	# 	$CardFront.z_index = 4
-	# 	$CardBack.z_index = 5
-	
-	# $MultiplayerSynchronizer.set_multiplayer_authority(cardData.ownerId)
+#card movement related things
+
+var isSelected = false
 
 func initBTCardType(suit,rank,id): #this like shuffling the deck physically
 	self.suit = suit
@@ -84,18 +56,18 @@ func initBTCardOwner(isOwnedByCurrentPlayer,ownerPlayerId,directionOrientation,s
 	self.screenOrientation = screenOrientation
 func _physics_process(delta):
 	# isOwner = $MultiplayerSynchronizer.get_multiplayer_authority() == multiplayer.get_unique_id()
-	isOwnedByCurrentPlayer = true
-	if selected and isOwnedByCurrentPlayer:
-		position = lerp(position,get_global_mouse_position(),25 * delta)
-		restSnapPos = position
-	else:
-		position = lerp(position,restSnapPos,25 * delta)
+	# isOwnedByCurrentPlayer = true
+	# if selected and isOwnedByCurrentPlayer:
+	# 	position = lerp(position,get_global_mouse_position(),25 * delta)
+	# 	restSnapPos = position
+	# else:
+	position = lerp(position,restSnapPos,25 * delta)
 func _ready():
 	pass 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	$Label.text = str(ownerPlayerId) + getDirectionOriEnumStr(directionOrientation) + getScreenOriEnumStr(screenOrientation)
+	$Label.text = str(ownerPlayerId) + getDirectionOriEnumStr(directionOrientation) + getScreenOriEnumStr(screenOrientation) + str(id)
 	pass
 
 
@@ -109,7 +81,6 @@ func _to_string():
 		ownerPlayerId,
 		directionOrientation,
 	]
-
 
 
 
@@ -144,13 +115,14 @@ func _input(event):
 			if(isInDroppableArea):
 				#you are dropped. sooo
 				isInDroppableArea = false
-				isPlayed.emit(self)
+				isPlayedSignal.emit(self)
 func _on_input_event(viewport, event, shape_idx):
 	if(!isOwnedByCurrentPlayer):
 		return # not allowed to do anything with this card
 	if event.is_action_pressed("leftClick"):
-		selected = true
+		isSelectedSignal.emit(self)
 	if event.is_action_pressed("rightClick"):
 		flipCard()
 
-signal isPlayed(vars)
+signal isPlayedSignal(vars)
+signal isSelectedSignal(card)

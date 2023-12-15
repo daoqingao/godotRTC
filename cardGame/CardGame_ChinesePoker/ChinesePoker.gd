@@ -4,20 +4,57 @@ class_name ChinesePokerGameManager
 
 @onready var BTCard = preload("res://cardGame/CardGame_ChinesePoker/BTCard.tscn")
 @onready var camera = $Camera2D
-
+@onready var playCardsButton = $PlayCardsButton
 #CONST for this game
-
 enum DirectionOrientation {
 	SOUTH,WEST,NORTH,EAST
 }
-
 enum ScreenOrientation {
 	BOT,LEFT,TOP,RIGHT
 }
 const PLAYER_COUNT = 4 #ALWAYS 4, the people in the lobby is ALWAYS 4 
 const NUM_CARDS_PER_PLAYER = 13 #13 cards per play
 
-## local data that should be kept the same across all instance
+
+
+enum CardPlayedComboType {
+	SINGLE,
+	DOUBLE,
+	COMBO,
+	INVALID_COMBO,
+	FIRST_CARD_TO_PLAY_NO_CARDS_BEFORE
+}
+const PlayedSizeToComboType = {
+	1:CardPlayedComboType.SINGLE,
+	2:CardPlayedComboType.DOUBLE,
+	5:CardPlayedComboType.COMBO
+}
+
+var SuitOrder = {
+	'diamonds':0,
+	'clubs':1,
+	'hearts':2,
+	'spades':3,
+}
+var RankOrder = {
+	'3':0,
+	'4':1,
+	'5':2,
+	'6':3,
+	'7':4,
+	'8':5,
+	'9':6,
+	'10':7,
+	'J':8,
+	'Q':9,
+	'K':10,
+	'A':11,
+	'2':12,
+}
+@onready var PLAYED_CARDS_SNAP_POSITION = $DropArea/DropSnapPos.global_position
+
+################################################# DATA THAT ARE RELATED TO THE GAME AND SHOULD BE THE SAME ACROSS ALL INSTANCE
+var allPlayerIdList = []
 
 var CardsOnPlayersHands = { #THESE ARE ALSO THE INDEX!!!!!!! 0,1,2,3
 	DirectionOrientation.SOUTH:{},
@@ -25,18 +62,23 @@ var CardsOnPlayersHands = { #THESE ARE ALSO THE INDEX!!!!!!! 0,1,2,3
 	DirectionOrientation.NORTH:{},
 	DirectionOrientation.EAST:{},
 }
-
-
 var allCards = {} # <cardid : BTCard>
-var playedCards = {} # <
-
-# var allPlayerToOrientation = {} #<PlayerId : DirectionOrientation >
-# var allOrientationToPlayer = {} #<DirectionOrientation, PlayerId> #idk these should be interchangable right
 
 
-var allPlayerIdList = []
 
-#this one is not the same across all instance
+
+
+################################################# DATA THAT are related to the cards being played,
+#cards that are were last played. we need to compare to this
+var cardslastPlayedList = [] #array of card ids that werw last played
+var cardsLastPlayedComboType = CardPlayedComboType.SINGLE #something like that	
+
+var cardsSelectedToPlayList = {} #array of card ids that are selected
+var cardsSelectedToPlayComboType = CardPlayedComboType.SINGLE #something like that
+
+
+
+#this one is not the same across all instance ############################# DATA THAT ARE RELATED TO SELF CLIENT PLAYER
 var selfPlayerId = -1
 var selfPlayerOrientation = -1
 
@@ -78,7 +120,18 @@ func handlePropagatedAction(actionType, propagatedData):
 		handlePropagatedInit(propagatedData)
 
 func handlePropagatedCardPlayed(propagatedData):
-	print("another player played a card!")
+	cardslastPlayedList = propagatedData.cardsIdPlayedList
+	cardsLastPlayedComboType = propagatedData.cardsPlayedType
+
+	print("players played a card, ", cardslastPlayedList, cardsLastPlayedComboType)
+	lerpLastPlayedCardsToCenter()
+	# var cardIdList = propagatedData
+	# # var card = allCards[cardId]
+	# card.restSnapPos = PLAYED_CARDS_SNAP_POSITION
+	# card.z_index = cardPlayedSize + 3
+	# cardPlayedSize +=1
+	# print(PLAYED_CARDS_SNAP_POSITION)
+	# print("another player played a card!")
 	return
 
 func handlePropagatedInit(propagatedData):
@@ -93,59 +146,189 @@ func handlePropagatedInit(propagatedData):
 
 #card signals
 
-func handleOnCardIsPlayed(card):
-	card.restSnapPos = $DropArea.position
-	print(card,"is played")
-	Gamedata.propagateActionType(Gamedata.ActionType.CARD_PLAYED,card.id)
+# func handleOnCardIsPlayed(card):
+# 	# card.restSnapPos = PLAYED_CARDS_SNAP_POSITION
+# 	# print(card,"is played")
+# 	# Gamedata.propagateActionType(Gamedata.ActionType.CARD_PLAYED,card.id)
+# 	return
 
-func createBTCard():
-	var card = BTCard.instantiate()
-	add_child(card)
-	card.isPlayed.connect(handleOnCardIsPlayed)
-	return card
+
 
 #event handlers
 
-func _on_drop_area_area_entered(area):
-	if(not area is BTCard):
-		return
-	var card: BTCard = area
-	card.isInDroppableArea = true
+# func _on_drop_area_area_entered(area):
+# 	if(not area is BTCard):
+# 		return
+# 	var card: BTCard = area
+# 	card.isInDroppableArea = true
 
-func _on_drop_area_area_exited(area):
-	if(not area is BTCard):
-		return
-	var card: BTCard = area
-	card.isInDroppableArea = false
+# func _on_drop_area_area_exited(area):
+# 	if(not area is BTCard):
+# 		return
+# 	var card: BTCard = area
+# 	card.isInDroppableArea = false
+
+var testCardPlayed = 1
+
+
+
+####################### Event Handlers For Buttons On UI
+func _on_play_cards_button_pressed():
+	pass # Replace with function body.
 
 func _on_button_pressed():
-	Gamedata.propagateActionType(Gamedata.ActionType.CARD_PLAYED,5)
+	Gamedata.propagateActionType(Gamedata.ActionType.CARD_PLAYED,{
+		cardsIdPlayedList = [1],
+		cardsPlayedType = CardPlayedComboType.SINGLE
+	})
+	# Gamedata.propagateActionType(Gamedata.ActionType.CARD_PLAYED,{
+	# 	cardsIdPlayedList = [1,5,6,7,8],
+	# 	cardsPlayedType = CardPlayedComboType.COMBO
+	# })
 	#another played played a card!
 	pass # Replace with function body.
 
+
+####################### Event Handlers For Cards
+
+
+#function to move the cards slight up when selected and back down when deselected
+func handleOnCardIsSelected(card):
+	if(!card.isSelected):
+		card.restSnapPos = card.restSnapPos + Vector2(0,-50)
+		cardsSelectedToPlayList[card.id] = card
+	else:
+		card.restSnapPos = card.restSnapPos + Vector2(0,50)
+		cardsSelectedToPlayList.erase(card.id)
+	print("selected card list",cardsSelectedToPlayList)
+	card.isSelected = !card.isSelected
+	playCardsButton.disabled = false if checkIfCardsSelectedIsPlayable() else true
+	return
 	
+
+
+
+
+
+
+
+
+
+
+####################### GAMEPLAY FUNCTIONS
+
+#card is only palyable if it beats the last card
+func checkIfCardsSelectedIsPlayable():
+	var cardsSelectedToPlayListSize = cardsSelectedToPlayList.size()
+	cardsSelectedToPlayComboType = PlayedSizeToComboType[cardsSelectedToPlayListSize] if PlayedSizeToComboType.has(cardsSelectedToPlayListSize) else CardPlayedComboType.INVALID_COMBO
+	checkIfCardToPlayBeatsLastPlayedCard(cardsSelectedToPlayList,cardsSelectedToPlayComboType,cardslastPlayedList,cardsLastPlayedComboType)
+
+func checkIfCardToPlayBeatsLastPlayedCard(cardsToPlayList,cardsToPlayComboType,cardsToBeatList,cardToBeatComboType):
+	if(cardToBeatComboType != cardsToPlayComboType):
+		return false #if the combo type is not the same, then it is not playable
+	##switch case for the combo type
+	if(cardsToPlayComboType == CardPlayedComboType.SINGLE):
+		return checkIfSingleBeatable(cardsToPlayList,cardsToBeatList)
+	elif(cardsToPlayComboType == CardPlayedComboType.DOUBLE):
+		return checkIfDoubleBeatable(cardsToPlayList,cardsToBeatList)
+
+func checkIfSingleBeatable(cardsToPlayList,cardsToBeatList):
+	var cardToPlay = allCards[cardsToPlayList[0]]
+	var cardToBeat = allCards[cardsToBeatList[0]]
+
+func checkIfDoubleBeatable(cardsToPlayList,cardsToBeatList):
+	var cardToPlay1 = allCards[cardsToPlayList[0]]
+	var cardToPlay2 = allCards[cardsToPlayList[1]]
+	var cardToBeat1 = allCards[cardsToBeatList[0]]
+	var cardToBeat2 = allCards[cardsToBeatList[1]]
+	if(cardToPlay1.cardRank == cardToPlay2.cardRank):
+		return cardToPlay1.cardRank > cardToBeat1.cardRank
+	else:
+		return cardToPlay1.cardRank > cardToBeat1.cardRank and cardToPlay2.cardRank > cardToBeat2.cardRank
+	
+func lerpLastPlayedCardsToCenter():
+	if(cardsLastPlayedComboType == CardPlayedComboType.SINGLE):
+		var card = allCards[cardslastPlayedList[0]]
+		card.restSnapPos = PLAYED_CARDS_SNAP_POSITION
+		card.z_index = 3
+		return
+	elif(cardsLastPlayedComboType == CardPlayedComboType.DOUBLE):
+		var card1 = allCards[cardslastPlayedList[0]]
+		var card2 = allCards[cardslastPlayedList[1]]
+		card1.restSnapPos = PLAYED_CARDS_SNAP_POSITION
+		card2.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(100,0)
+		card1.z_index = 3
+		card2.z_index = 3
+		return
+	elif(cardsLastPlayedComboType == CardPlayedComboType.COMBO):
+		var card1 = allCards[cardslastPlayedList[0]]
+		var card2 = allCards[cardslastPlayedList[1]]
+		var card3 = allCards[cardslastPlayedList[2]]
+		var card4 = allCards[cardslastPlayedList[3]]
+		var card5 = allCards[cardslastPlayedList[4]]
+		card1.restSnapPos = PLAYED_CARDS_SNAP_POSITION
+		card2.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(100,0)
+		card3.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(200,0)
+		card4.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(300,0)
+		card5.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(400,0)
+		card1.z_index = 3
+		card2.z_index = 3
+		card3.z_index = 3
+		card4.z_index = 3
+		card5.z_index = 3
+		return
+	else:
+		print("error, card combo type not found")
+		return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+####################### GAME INITIALIZATION FUNCTIONS
+func createBTCard():
+	var card = BTCard.instantiate()
+	add_child(card)
+	# card.isPlayed.connect(handleOnCardIsPlayed)
+	card.isSelectedSignal.connect(handleOnCardIsSelected)
+	return card
 func startGame():
 	###init the card game
-
 	#shufflign deck
-	var suits = ['hearts', 'diamonds', 'clubs', 'spades']
-	var ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+	var suits = ['diamonds', 'clubs', 'hearts', 'spades']
+	var ranks = [ '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A' ,'2',]
 	# suits.shuffle()
 	# ranks.shuffle()
 	var temporaryCardStack = [] 
 	var countsId = 1
-	for suit in suits:
-		for rank in ranks:
+	for rank in ranks:
+		for suit in suits:
 			var card = createBTCard()
 			card.initBTCardType(suit,rank,countsId)
 			allCards[countsId] = card
 			temporaryCardStack.push_back(card)
 			countsId +=1
 	temporaryCardStack.shuffle()
-
-
 	print("started game #pretend we are drawing cards here")
-
 	#assigning screen positions and orientations
 	for playerIdListIdx in range(PLAYER_COUNT):
 		var playerId = allPlayerIdList[playerIdListIdx] 
@@ -165,8 +348,6 @@ func startGame():
 	#now this means, THE INDEX OF THE ARR IS THE CURRENT SCREEN ORIENTATION
 	# THE ELEMETNS OF THE ARR IS THE DIRECTIONAL ORIENTATION
 	# NOW THEY ARE MAPPED TO EACH OTHER!
-	
-
 	for currentScreenOrientation in range(PLAYER_COUNT): #bot left top right, in that order, the game will be played like that too.
 		var currentDirectionOrientation = directionOrientationArr[currentScreenOrientation] #first one will be selfPlayerOrientation #could be west and you are bot
 		selfDirectionOriToScreenOri[currentDirectionOrientation] = currentScreenOrientation
@@ -179,13 +360,7 @@ func startGame():
 			playerId = playerId,
 			currentScreenOrientation = currentScreenOrientation
 		})
-
-
-
-	
-
 	#selfDirectionOriToScreenOri will be used in the future to determine where teh cards was played and spawn from where
-
 func distributeCards(data):
 	var initY = 300
 	var initX = 0
@@ -206,152 +381,10 @@ func distributeCards(data):
 	
 
 
-		#bottom player first iteration.
+####################### UTILITY FUNCTIONS
 func getDirectionOriEnumStr(value):
 	return getEnumStr(DirectionOrientation,value)
 func getScreenOriEnumStr(value):
 	return getEnumStr(ScreenOrientation,value)
 func getEnumStr(enums,value):
 	return enums.keys()[value]
-
-
-
-
-
-
-# 	if(Gamedata.playerIDList == 1): #you are always on the bottom.....
-# 		camera.rotation_degrees = 0
-# 	else:
-# 		camera.rotation_degrees = 90
-# 	initCardsOwn()
-# 	initCardsOthers()
-
-# func initCardsOwn():
-# 	createBTCard("",Vector2.ZERO,true,Gamedata.playerId)
-# func initCardsOthers():
-# 	createBTCard("",Vector2(200,100),false,Gamedata.playerId)
-	
-
-# ###local data
-# var allCards = {}
-# var cardsOwnId = []
-# var cardsNotOwnId = []
-
-# var cardsOwnType = []
-# var cardsNotOwnType = []
-# var playerType = null
-
-# ###synchronize data
-# var RPSRPCData = {
-# 	hostId = -1,
-# 	clientId = -1,
-
-# 	maxTurns = 3,
-# 	hostCardsId = [1,2,3],
-# 	clientCardsId = [4,5,6],
-# 	#cardRandType = {
-# 		#playerTypes.HOST : [], #array of predetermined rock paper or scissor
-# 		#playerTypes.CLIENT : [],	
-# 	#},
-# 	#cardsPlayedId = {
-# 		#playerTypes.HOST : null,
-# 		#playerTypes.CLIENT : null,	#default is null. 
-# 	#},
-# 	#score = {
-# 		#playerTypes.HOST : 0,
-# 		#playerTypes.CLIENT : 0,
-# 		#"TIE": 0,
-# 	#}
-# }
-
-# #rpc signals
-# func handlePropagatedAction(actionType, newRPSData):
-# 	print("receives", actionType)
-# 	if(actionType==actionTypes.CARD_PLAYED):
-# 		handlePropagatedCardPlayed(newRPSData)
-# 	if(actionType==actionTypes.INIT):
-# 		handlePropagatedInit(newRPSData)
-
-
-
-	
-# func handlePropagatedCardPlayed(propagatedData):	
-# 	var card = allCards[propagatedData.cardIdPlayed]
-# 	RPSRPCData.cardsPlayedId[propagatedData.playerTypeThatPlayedIt] = card.cardId
-# 	card.restSnapPos = Vector2.ZERO
-# 	if(RPSRPCData.cardsPlayedId[playerTypes.HOST] != null and RPSRPCData.cardsPlayedId[playerTypes.CLIENT] != null): #wait wyou can just check right here...
-# 		#you can just check here when both cards are played
-# 		var hostCard = allCards[RPSRPCData.cardsPlayedId[playerTypes.HOST]]
-# 		var clientCard = allCards[RPSRPCData.cardsPlayedId[playerTypes.CLIENT]]
-# 		var cardToFlip = null
-
-# 		if(hostCard.isOwner == false):
-# 			cardToFlip = hostCard
-# 		else:
-# 			cardToFlip = clientCard
-# 		cardToFlip.restSnapPos = TopRevealPos		
-# 		await cardToFlip.flipCard()
-
-# 		RPSRPCData.score[checkWhoWonCard()] +=1
-# 		RPSRPCData.cardsPlayedId[playerTypes.HOST] = null
-# 		RPSRPCData.cardsPlayedId[playerTypes.CLIENT] = null
-# 		#check who won bruh 
-
-
-# func checkWhoWonCard():
-# 	var hostCard = allCards[RPSRPCData.cardsPlayedId[playerTypes.HOST]].cardType
-# 	var clientCard = allCards[RPSRPCData.cardsPlayedId[playerTypes.CLIENT]].cardType
-# 	if(winningCombinations[hostCard]==clientCard):
-# 		return playerTypes.HOST
-# 	elif winningCombinations[clientCard]==hostCard:
-# 		return playerTypes.CLIENT
-# 	return "TIE"
-
-# #card signals . no RPC should be set here
-# func handleOnCardIsPlayed(card):
-# 	print(RPSRPCData.cardsPlayedId)
-# 	if(RPSRPCData.cardsPlayedId[playerType]!= null):
-# 		return #not allowing you to play more cards until both are cleared
-# 	Gamedata.propagateActionType.rpc(actionTypes.CARD_PLAYED,{
-# 		cardIdPlayed = card.cardId,
-# 		playerTypeThatPlayedIt = playerType
-# 	})
-
-
-# # func handleOnBothCardPlayed():
-# # 	Gamedata.propagateActionType.rpc(actionTypes.BOTH_CARDS_PLAYED,{})
-
-
-# func _ready():
-# 	# print("reading, sohuld be called twice") #gets called twice thats good.....
-# 	Gamedata.propagateActionToGamemanager.connect(handlePropagatedAction)
-# 	Gamedata.propagateActionType.rpc_id(1,"playersHandleEmitHookedupREADIED",{})
-
-# func _process(delta):
-# 	ScoreboardText.text = "You are currently: ,"+ str(Gamedata.playerId) + "Host: "+ str(RPSRPCData.score[playerTypes.HOST]) + "CLIENT: "+ str(RPSRPCData.score[playerTypes.CLIENT]) + "TIE: "+ str(RPSRPCData.score["TIE"])
-
-# func test():
-# 	print("test herlooo@@@@@@@@@@@@@@@@@@@@@@@")
-
-
-# func initializeCardsOnBot():
-# 	createBTCard(cardsOwnType[0],		Vector2(100,200),true,cardsOwnId[0])
-# 	createBTCard(cardsOwnType[1],		Vector2(300,200),true,cardsOwnId[1])
-# 	createBTCard(cardsOwnType[2],	Vector2(500,200),true,cardsOwnId[2])
-# func initializeCardsOnTop():
-# 	createBTCard(cardsNotOwnType[0],		Vector2(100,-200),false,cardsNotOwnId[0])
-# 	createBTCard(cardsNotOwnType[1],		Vector2(300,-200),false,cardsNotOwnId[1])
-# 	createBTCard(cardsNotOwnType[2],	Vector2(500,-200),false,cardsNotOwnId[2])
-	
-
-	
-	
-
-
-# func _on_restart_game_button_pressed():
-# 	Gamedata.propagateActionType.rpc("RESTART","RPS")
-
-
-
-
-
