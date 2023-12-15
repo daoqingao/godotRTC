@@ -20,45 +20,55 @@ const NUM_CARDS_PER_PLAYER = 13 #13 cards per play
 enum CardPlayedComboType {
 	SINGLE,
 	DOUBLE,
-	COMBO,
+	QUINT,
 	INVALID_COMBO,
 	FIRST_CARD_TO_PLAY_NO_CARDS_BEFORE
 }
 const PlayedSizeToComboType = {
 	1:CardPlayedComboType.SINGLE,
 	2:CardPlayedComboType.DOUBLE,
-	5:CardPlayedComboType.COMBO
+	5:CardPlayedComboType.QUINT
 }
 
-var SuitOrder = {
-	'diamonds':0,
-	'clubs':1,
-	'hearts':2,
-	'spades':3,
-}
-var RankOrder = {
-	'3':0,
-	'4':1,
-	'5':2,
-	'6':3,
-	'7':4,
-	'8':5,
-	'9':6,
-	'10':7,
-	'J':8,
-	'Q':9,
-	'K':10,
-	'A':11,
-	'2':12,
+const SPADES = "spades"
+const CLUBS = "clubs"
+const HEARTS = "hearts"
+const DIAMONDS = "diamonds"
+
+var SuitOrdering = {
+	'diamonds':1,
+	'clubs':2,
+	'hearts':3,
+	'spades':4,
 }
 
-const PokerCard5ComboType = {
-	'straight':0, #5 cards in a row, different color
-	'flush':1, #colors
-	'full_house':2, #3 + 2 
-	'four_of_a_kind':3, #4 + 1
-	'straight_flush':4, #5 cards in a row, same color
+
+var RankOrdering = {
+	'3':1,
+	'4':2,
+	'5':3,
+	'6':4,
+	'7':5,
+	'8':6,
+	'9':7,
+	'10':8,
+	'J':9,
+	'Q':10,
+	'K':11,
+	'A':12,
+	'2':13,
 }
+
+
+enum QuintComboType {
+	STRAIGHT, #5 cards in a row, different color
+	FLUSH, #colors
+	FULL_HOUSE, #3 + 2 
+	FOUR_OF_A_KIND, #4 + 1
+	STRAIGHT_FLUSH, #5 cards in a row, same color
+	NONE,
+}
+
 @onready var PLAYED_CARDS_SNAP_POSITION = $DropArea/DropSnapPos.global_position
 
 ################################################# DATA THAT ARE RELATED TO THE GAME AND SHOULD BE THE SAME ACROSS ALL INSTANCE
@@ -80,10 +90,11 @@ var allCards = {} # <cardid : BTCard>
 #cards that are were last played. we need to compare to this
 var cardslastPlayedList = [] #array of card ids that werw last played
 var cardsLastPlayedComboType = CardPlayedComboType.FIRST_CARD_TO_PLAY_NO_CARDS_BEFORE #something like that	
+var cardsLastPlayedQuintComboType = QuintComboType.NONE #something like that
 
 var cardsSelectedToPlayList = [] #array of card ids that are selected
 var cardsSelectedToPlayComboType = CardPlayedComboType.FIRST_CARD_TO_PLAY_NO_CARDS_BEFORE #something like that
-
+var cardsSelectedToPlayQuintComboType = QuintComboType.NONE #something like that
 
 
 #this one is not the same across all instance ############################# DATA THAT ARE RELATED TO SELF CLIENT PLAYER
@@ -230,42 +241,52 @@ func checkIfCardsSelectedIsPlayable():
 	cardsSelectedToPlayComboType = getCardsListComboType(cardsSelectedToPlayList)
 	print("the combo ranking is")
 	print(cardsSelectedToPlayComboRanking)
+	print("the combo type is", getEnumStr(CardPlayedComboType,cardsSelectedToPlayComboType)) 
+	print("The quint combo type is", getEnumStr(QuintComboType,cardsSelectedToPlayQuintComboType))
 	# checkIfCardToPlayBeatsLastPlayedCard(cardsSelectedToPlayList,cardsSelectedToPlayComboType,cardslastPlayedList,cardsLastPlayedComboType)
 
 var cardsSelectedToPlayComboRanking = -1
 
 func getCardsListComboType(cardsList):
+	#reset combos when newly checking
+	cardsSelectedToPlayQuintComboType = QuintComboType.NONE #something like that
+	cardsSelectedToPlayComboRanking = -1
+	cardsSelectedToPlayComboType = CardPlayedComboType.INVALID_COMBO
 	var cardPlayedSize = cardsList.size()
 	if(cardPlayedSize == 1):
-		cardsSelectedToPlayComboRanking = getSingleComboRanking(cardsList)
+		cardsSelectedToPlayComboRanking = getSingleComboOrdering(cardsList)
 		return CardPlayedComboType.SINGLE
 	if(cardPlayedSize == 2):
 		if(cardsList[0].rank == cardsList[1].rank):
-			cardsSelectedToPlayComboRanking = getDoubleComboRanking(cardsList)
+			cardsSelectedToPlayComboRanking = getDoubleComboOrdering(cardsList)
 			return CardPlayedComboType.DOUBLE
 	if(cardPlayedSize == 5):
-		return getQuintComboRanking(cardsList)
+		cardsSelectedToPlayComboRanking = getQuintComboOrdering(cardsList)
+		return CardPlayedComboType.QUINT
 	#invalid combo includes 0, non matching pairs, and non matching 5 card combos
+	# cardsSelectedToPlayComboRanking = -1
 	return CardPlayedComboType.INVALID_COMBO
 	
 
-func getSingleComboRanking(cardsList):
+func getSingleComboOrdering(cardsList):
 	var card = cardsList[0]
 	var cardSuit = card.suit
 	var cardRank = card.rank
 	var rankScalability = 5 #1 rank higher means 5 times higher than climbing a suit , just making so that pairs are easier to track
-	return RankOrder[cardRank]*rankScalability  + SuitOrder[cardSuit ]
+	return RankOrdering[cardRank]*rankScalability  + SuitOrdering[cardSuit ]
+	#max is 13*5 + 4 = 69
 
-func getDoubleComboRanking(cardsList):
+func getDoubleComboOrdering(cardsList):
 	var card1 = cardsList[0]
 	var card2 = cardsList[1]
-	var doubleRanking = getSingleComboRanking([card1]) + getSingleComboRanking([card2])
+	var doubleRanking = getSingleComboOrdering([card1]) + getSingleComboOrdering([card2])
 	#if any of them has a spade, it gets a +1
 	if(card1.suit == 'spades' or card2.suit == 'spades'):
 		doubleRanking += 1
+	#max is 69 + 1 = 70
 	return doubleRanking
 
-func getQuintComboRanking(cardsList):
+func getQuintComboOrdering(cardsList):
 	var card1 = cardsList[0]
 	var card2 = cardsList[1]
 	var card3 = cardsList[2]
@@ -273,48 +294,74 @@ func getQuintComboRanking(cardsList):
 	var card5 = cardsList[4]
 
 	var comboRanking = 0
-	var ranksList = [card1.rank,card2.rank,card3.rank,card4.rank,card5.rank]
+	# var ranksList = [card1.rank,card2.rank,card3.rank,card4.rank,card5.rank]
 	var suitsList = [card1.suit,card2.suit,card3.suit,card4.suit,card5.suit]
-	var ranksListRankings = [RankOrder[card1.rank],RankOrder[card2.rank],RankOrder[card3.rank],RankOrder[card4.rank],RankOrder[card5.rank]]
+	var ranksListRankings = [RankOrdering[card1.rank],RankOrdering[card2.rank],RankOrdering[card3.rank],RankOrdering[card4.rank],RankOrdering[card5.rank]]
 	
-	
+
+	var straightsMaxRanking = 69
+	var flushMaxRanking = 69 + 4*13
+	var fullHouseMaxRanking = 139 + 13
+	var fourOfAKindMaxRanking = 152 + 13
+
 	#check for straight....
 	ranksListRankings.sort()
+
+	var isStraightFlag = false
 	if(ranksListRankings[0] == ranksListRankings[1]-1 and ranksListRankings[1] == ranksListRankings[2]-1 and ranksListRankings[2] == ranksListRankings[3]-1 and ranksListRankings[3] == ranksListRankings[4]-1):
 		#what determines the rank is the biggest single card in that straight
-		#goes through all the cardslist and returns the biggest number return by getSingleComboRanking
-		comboRanking = cardsList.reduce(	func(card1,card2): return card1 if getSingleComboRanking([card1]) > getSingleComboRanking([card2]) else card2)
+		var singleCard = cardsList.reduce(	func(cardA,cardB): return cardA if getSingleComboOrdering([cardA]) > getSingleComboOrdering([cardB]) else cardB)
+		comboRanking += getSingleComboOrdering([singleCard])
+		#max is 69
+		cardsSelectedToPlayQuintComboType = QuintComboType.STRAIGHT
+		isStraightFlag = true
+	#check for flush
+	if(suitsList[0] == suitsList[1] and suitsList[1] == suitsList[2] and suitsList[2] == suitsList[3] and suitsList[3] == suitsList[4]):
+		comboRanking+= straightsMaxRanking #always bigger than straight
+		#biggest card of the flush determines the ranking
+		var singleCard = cardsList.reduce(	func(cardA,cardB): return cardA if getSingleComboOrdering([cardA]) > getSingleComboOrdering([cardB]) else cardB)
+		comboRanking += SuitOrdering[singleCard.suit]*13 + RankOrdering[singleCard.rank]
+		cardsSelectedToPlayQuintComboType = QuintComboType.FLUSH
+		#min is 69 + 1*13 + 1 = 83
+		#max is 69 + 4*13 + 12 = 139
+		if(isStraightFlag):
+			cardsSelectedToPlayQuintComboType = QuintComboType.STRAIGHT_FLUSH
+			comboRanking+= fourOfAKindMaxRanking #will get the added bonus of always being bigger than 4 of a kind
+			return comboRanking #just end it right here because it is the biggest... no need to check for full house or four of a kind
+			#min is 83 + 165 = 248
+			#max is 139 + 165 = 304
 
-	
-	# #check for flush
-	# var suitsRankingMultiplier = 13 #
-	# if(suitsList[0] == suitsList[1] and suitsList[1] == suitsList[2] and suitsList[2] == suitsList[3] and suitsList[3] == suitsList[4]):
-	# 	comboRanking = RankOrder[suitsList[4]] #the highest ranking card in a flush would be 3
+	#check for full house
+	#contains a pair and a triple
+	if( (ranksListRankings[0] == ranksListRankings[1] and ranksListRankings[2] == ranksListRankings[3] and ranksListRankings[3] == ranksListRankings[4]) #pair is at the front
+		or (ranksListRankings[0] == ranksListRankings[1] and ranksListRankings[1] == ranksListRankings[2] and ranksListRankings[3] == ranksListRankings[4]) #pair is at the back
+		):
+		comboRanking+= flushMaxRanking #always bigger than flush
+		#check which rank is the triple
+		var tripleRank =  ranksListRankings[2] #IT ALWAYS NEEDS TO BE IN THE MIDDLE... its either 22333 or 33322 lol
+		comboRanking+= tripleRank
+		#min is 139 + 1 = 140
+		#max is 139 + 13 = 152
+		cardsSelectedToPlayQuintComboType = QuintComboType.FULL_HOUSE
+
+	#check for four of a kind
+	#contains a single and a quad
+	if( (ranksListRankings[0] == ranksListRankings[1] and ranksListRankings[1] == ranksListRankings[2] and ranksListRankings[2] == ranksListRankings[3]) #quad is at the front
+		or (ranksListRankings[1] == ranksListRankings[2] and ranksListRankings[2] == ranksListRankings[3] and ranksListRankings[3] == ranksListRankings[4]) #quad is at the back
+		):
+		comboRanking+= fullHouseMaxRanking #always bigger than full house
+		var quadRank =  ranksListRankings[2] #quad would be in the middle if its 22223 or 32222
+		comboRanking+= quadRank
+		#min is 152 + 1 = 153
+		#max is 152 + 13 = 165
+		cardsSelectedToPlayQuintComboType = QuintComboType.FOUR_OF_A_KIND
+
+	#check for royal flush
+	#contains a straight and a flush
+
 	return comboRanking
 
-# func checkIfCardToPlayBeatsLastPlayedCard(cardsToPlayList,cardsToPlayComboType,cardsToBeatList,cardToBeatComboType):
-# 	if(cardToBeatComboType != cardsToPlayComboType):
-# 		return false #if the combo type is not the same, then it is not playable
-# 	##switch case for the combo type
-# 	if(cardsToPlayComboType == CardPlayedComboType.SINGLE):
-# 		return checkIfSingleBeatable(cardsToPlayList,cardsToBeatList)
-# 	elif(cardsToPlayComboType == CardPlayedComboType.DOUBLE):
-# 		return checkIfDoubleBeatable(cardsToPlayList,cardsToBeatList)
 
-# func checkIfSingleBeatable(cardsToPlayList,cardsToBeatList):
-# 	var cardToPlay = cardsToPlayList[0]
-# 	var cardToBeat = cardsToBeatList[0]
-# 	print(cardToPlay,cardToBeat)
-# func checkIfDoubleBeatable(cardsToPlayList,cardsToBeatList):
-# 	var cardToPlay1 = allCards[cardsToPlayList[0]]
-# 	var cardToPlay2 = allCards[cardsToPlayList[1]]
-# 	var cardToBeat1 = allCards[cardsToBeatList[0]]
-# 	var cardToBeat2 = allCards[cardsToBeatList[1]]
-# 	if(cardToPlay1.cardRank == cardToPlay2.cardRank):
-# 		return cardToPlay1.cardRank > cardToBeat1.cardRank
-# 	else:
-# 		return cardToPlay1.cardRank > cardToBeat1.cardRank and cardToPlay2.cardRank > cardToBeat2.cardRank
-	
 
 
 func lerpLastPlayedCardsToCenter():
@@ -331,7 +378,7 @@ func lerpLastPlayedCardsToCenter():
 		card1.z_index = 3
 		card2.z_index = 3
 		return
-	elif(cardsLastPlayedComboType == CardPlayedComboType.COMBO):
+	elif(cardsLastPlayedComboType == CardPlayedComboType.QUINT):
 		var card1 = allCards[cardslastPlayedList[0]]
 		var card2 = allCards[cardslastPlayedList[1]]
 		var card3 = allCards[cardslastPlayedList[2]]
