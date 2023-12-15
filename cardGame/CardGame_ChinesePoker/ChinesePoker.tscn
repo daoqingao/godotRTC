@@ -1,7 +1,9 @@
 [gd_scene load_steps=3 format=3 uid="uid://bxuthfgtaurup"]
 
-[ext_resource type="PackedScene" uid="uid://c2vebsq2inor5" path="res://cardGame/CardGame_ChinesePoker/BTCard.tscn" id="1_0ykmd"]
 [ext_resource type="Script" path="res://cardGame/CardGame_ChinesePoker/ChinesePoker.gd" id="1_vvo47"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_67l80"]
+size = Vector2(40, 40)
 
 [node name="ChinesePoker" type="Node2D"]
 script = ExtResource("1_vvo47")
@@ -28,179 +30,28 @@ offset_bottom = 360.0
 mouse_filter = 1
 color = Color(0.121569, 0.121569, 0.121569, 1)
 
-[node name="DebugCards" type="Node2D" parent="."]
-visible = false
-position = Vector2(12, 250)
+[node name="DropArea" type="Area2D" parent="."]
+position = Vector2(-82, -271)
+scale = Vector2(4.56309, 2.5735)
 
-[node name="DebugCards2" type="Node2D" parent="DebugCards"]
-position = Vector2(-278, -218)
-rotation = 1.5708
+[node name="DropColor" type="ColorRect" parent="DropArea"]
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 1
 
-[node name="BTCards" parent="DebugCards/DebugCards2" instance=ExtResource("1_0ykmd")]
-position = Vector2(132, 55)
+[node name="DropCollision" type="CollisionShape2D" parent="DropArea"]
+position = Vector2(20, 20)
+shape = SubResource("RectangleShape2D_67l80")
 
-[node name="BTCards5" parent="DebugCards/DebugCards2" instance=ExtResource("1_0ykmd")]
-position = Vector2(-34, 54)
+[node name="DropSnapPos" type="Node2D" parent="DropArea"]
 
-[node name="BTCards6" parent="DebugCards/DebugCards2" instance=ExtResource("1_0ykmd")]
-position = Vector2(-87, 53)
+[node name="AllTestRelatedFunctionalities" type="Node2D" parent="."]
 
-[node name="BTCards7" parent="DebugCards/DebugCards2" instance=ExtResource("1_0ykmd")]
-position = Vector2(-140, 52)
+[node name="MockAnotherPlayPlayedACard" type="Button" parent="AllTestRelatedFunctionalities"]
+offset_right = 8.0
+offset_bottom = 8.0
+text = "Mock another player played a card"
 
-[node name="BTCards8" parent="DebugCards/DebugCards2" instance=ExtResource("1_0ykmd")]
-position = Vector2(-193, 51)
-
-[node name="BTCards9" parent="DebugCards/DebugCards2" instance=ExtResource("1_0ykmd")]
-position = Vector2(-246, 50)
-
-[node name="BTCards10" parent="DebugCards/DebugCards2" instance=ExtResource("1_0ykmd")]
-position = Vector2(236, 56)
-
-[node name="BTCards11" parent="DebugCards/DebugCards2" instance=ExtResource("1_0ykmd")]
-position = Vector2(288, 56)
-
-[node name="BTCards12" parent="DebugCards/DebugCards2" instance=ExtResource("1_0ykmd")]
-position = Vector2(-299, 49)
-
-[node name="BTCards13" parent="DebugCards/DebugCards2" instance=ExtResource("1_0ykmd")]
-position = Vector2(-352, 52)
-
-[node name="BTCards3" parent="DebugCards/DebugCards2" instance=ExtResource("1_0ykmd")]
-position = Vector2(27, 54)
-
-[node name="BTCards4" parent="DebugCards/DebugCards2" instance=ExtResource("1_0ykmd")]
-position = Vector2(184, 54)
-
-[node name="BTCards2" parent="DebugCards/DebugCards2" instance=ExtResource("1_0ykmd")]
-
-[node name="DebugCards3" type="Node2D" parent="DebugCards"]
-position = Vector2(-26, -521)
-rotation = 3.14159
-
-[node name="BTCards" parent="DebugCards/DebugCards3" instance=ExtResource("1_0ykmd")]
-position = Vector2(132, 55)
-
-[node name="BTCards5" parent="DebugCards/DebugCards3" instance=ExtResource("1_0ykmd")]
-position = Vector2(-34, 54)
-
-[node name="BTCards6" parent="DebugCards/DebugCards3" instance=ExtResource("1_0ykmd")]
-position = Vector2(-87, 53)
-
-[node name="BTCards7" parent="DebugCards/DebugCards3" instance=ExtResource("1_0ykmd")]
-position = Vector2(-140, 52)
-
-[node name="BTCards8" parent="DebugCards/DebugCards3" instance=ExtResource("1_0ykmd")]
-position = Vector2(-193, 51)
-
-[node name="BTCards9" parent="DebugCards/DebugCards3" instance=ExtResource("1_0ykmd")]
-position = Vector2(-246, 50)
-
-[node name="BTCards10" parent="DebugCards/DebugCards3" instance=ExtResource("1_0ykmd")]
-position = Vector2(236, 56)
-
-[node name="BTCards11" parent="DebugCards/DebugCards3" instance=ExtResource("1_0ykmd")]
-position = Vector2(288, 56)
-
-[node name="BTCards12" parent="DebugCards/DebugCards3" instance=ExtResource("1_0ykmd")]
-position = Vector2(-299, 49)
-
-[node name="BTCards13" parent="DebugCards/DebugCards3" instance=ExtResource("1_0ykmd")]
-position = Vector2(-352, 52)
-
-[node name="BTCards3" parent="DebugCards/DebugCards3" instance=ExtResource("1_0ykmd")]
-position = Vector2(27, 54)
-
-[node name="BTCards4" parent="DebugCards/DebugCards3" instance=ExtResource("1_0ykmd")]
-position = Vector2(184, 54)
-
-[node name="BTCards2" parent="DebugCards/DebugCards3" instance=ExtResource("1_0ykmd")]
-
-[node name="DebugCards4" type="Node2D" parent="DebugCards"]
-position = Vector2(239, -286)
-rotation = -1.5708
-
-[node name="BTCards" parent="DebugCards/DebugCards4" instance=ExtResource("1_0ykmd")]
-position = Vector2(132, 55)
-
-[node name="BTCards5" parent="DebugCards/DebugCards4" instance=ExtResource("1_0ykmd")]
-position = Vector2(-34, 54)
-
-[node name="BTCards6" parent="DebugCards/DebugCards4" instance=ExtResource("1_0ykmd")]
-position = Vector2(-87, 53)
-
-[node name="BTCards7" parent="DebugCards/DebugCards4" instance=ExtResource("1_0ykmd")]
-position = Vector2(-140, 52)
-
-[node name="BTCards8" parent="DebugCards/DebugCards4" instance=ExtResource("1_0ykmd")]
-position = Vector2(-193, 51)
-
-[node name="BTCards9" parent="DebugCards/DebugCards4" instance=ExtResource("1_0ykmd")]
-position = Vector2(-246, 50)
-
-[node name="BTCards10" parent="DebugCards/DebugCards4" instance=ExtResource("1_0ykmd")]
-position = Vector2(236, 56)
-
-[node name="BTCards11" parent="DebugCards/DebugCards4" instance=ExtResource("1_0ykmd")]
-position = Vector2(288, 56)
-
-[node name="BTCards12" parent="DebugCards/DebugCards4" instance=ExtResource("1_0ykmd")]
-position = Vector2(-299, 49)
-
-[node name="BTCards13" parent="DebugCards/DebugCards4" instance=ExtResource("1_0ykmd")]
-position = Vector2(-352, 52)
-
-[node name="BTCards3" parent="DebugCards/DebugCards4" instance=ExtResource("1_0ykmd")]
-position = Vector2(27, 54)
-
-[node name="BTCards4" parent="DebugCards/DebugCards4" instance=ExtResource("1_0ykmd")]
-position = Vector2(184, 54)
-
-[node name="BTCards2" parent="DebugCards/DebugCards4" instance=ExtResource("1_0ykmd")]
-
-[node name="BTCards" parent="DebugCards" instance=ExtResource("1_0ykmd")]
-position = Vector2(132, 55)
-
-[node name="BTCards5" parent="DebugCards" instance=ExtResource("1_0ykmd")]
-position = Vector2(-34, 54)
-
-[node name="BTCards6" parent="DebugCards" instance=ExtResource("1_0ykmd")]
-position = Vector2(-87, 53)
-
-[node name="BTCards7" parent="DebugCards" instance=ExtResource("1_0ykmd")]
-position = Vector2(-140, 52)
-
-[node name="BTCards8" parent="DebugCards" instance=ExtResource("1_0ykmd")]
-position = Vector2(-193, 51)
-
-[node name="BTCards9" parent="DebugCards" instance=ExtResource("1_0ykmd")]
-position = Vector2(-246, 50)
-
-[node name="BTCards10" parent="DebugCards" instance=ExtResource("1_0ykmd")]
-position = Vector2(236, 56)
-
-[node name="BTCards11" parent="DebugCards" instance=ExtResource("1_0ykmd")]
-position = Vector2(288, 56)
-
-[node name="BTCards12" parent="DebugCards" instance=ExtResource("1_0ykmd")]
-position = Vector2(-299, 49)
-
-[node name="BTCards13" parent="DebugCards" instance=ExtResource("1_0ykmd")]
-position = Vector2(-352, 52)
-
-[node name="BTCards3" parent="DebugCards" instance=ExtResource("1_0ykmd")]
-position = Vector2(27, 54)
-
-[node name="BTCards4" parent="DebugCards" instance=ExtResource("1_0ykmd")]
-position = Vector2(184, 54)
-
-[node name="BTCards2" parent="DebugCards" instance=ExtResource("1_0ykmd")]
-
-[node name="BTCards" parent="." instance=ExtResource("1_0ykmd")]
-visible = false
-z_index = 1
-position = Vector2(-264, 282)
-
-[node name="BTCards2" parent="." instance=ExtResource("1_0ykmd")]
-visible = false
-position = Vector2(-160, 282)
+[connection signal="area_entered" from="DropArea" to="." method="_on_drop_area_area_entered"]
+[connection signal="area_exited" from="DropArea" to="." method="_on_drop_area_area_exited"]
+[connection signal="pressed" from="AllTestRelatedFunctionalities/MockAnotherPlayPlayedACard" to="." method="_on_button_pressed"]

@@ -53,13 +53,12 @@ var selfCardsPosArrX = []
 
 func _ready():
 	# print("reading, sohuld be called twice") #gets called twice thats good.....
-	Gamedata.propagateActionToGamemanager.connect(handlePropagatedAction)
+	Gamedata.propagateActionToPeers.connect(handlePropagatedAction)
 	Gamedata.propagateActionType.rpc_id(1,Gamedata.ActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED,{})
-
 	#stubbed data to init with 4 players
 	handlePropagatedInit({
 			peerPlayers= {
-				1:1,
+				1:1, 
 				20:22,
 				3333:3333,
 				4444:4444
@@ -79,6 +78,7 @@ func handlePropagatedAction(actionType, propagatedData):
 		handlePropagatedInit(propagatedData)
 
 func handlePropagatedCardPlayed(propagatedData):
+	print("another player played a card!")
 	return
 
 func handlePropagatedInit(propagatedData):
@@ -87,25 +87,42 @@ func handlePropagatedInit(propagatedData):
 	#0 is SOUTH, 1 is WEST, 2 IS NORTH, 3 IS EAST, (EXACTLY LIKE THE ENUM)
 	selfPlayerId = Gamedata.playerId
 	seed(propagatedData.pregeneratedSeed)
-	initAllBTCards()
 	startGame()
 
 
 
-# func createBTCard(cardType,pos,ownerId):
-# 	var card = BTCard.instantiate()
-# 	card.construct({
-# 		cardType = cardType,
-# 		cardPos = pos,
-# 		ownerId = ownerId,
-# 	})
-# 	add_child(card)
-# 	# allCards[cardId] = card
-# 	# card.isPlayed.connect(handleOnCardIsPlayed)	
-# 	return card
+#card signals
 
-func initAllBTCards(): 
-	return
+func handleOnCardIsPlayed(card):
+	card.restSnapPos = $DropArea.position
+	print(card,"is played")
+	Gamedata.propagateActionType(Gamedata.ActionType.CARD_PLAYED,card.id)
+
+func createBTCard():
+	var card = BTCard.instantiate()
+	add_child(card)
+	card.isPlayed.connect(handleOnCardIsPlayed)
+	return card
+
+#event handlers
+
+func _on_drop_area_area_entered(area):
+	if(not area is BTCard):
+		return
+	var card: BTCard = area
+	card.isInDroppableArea = true
+
+func _on_drop_area_area_exited(area):
+	if(not area is BTCard):
+		return
+	var card: BTCard = area
+	card.isInDroppableArea = false
+
+func _on_button_pressed():
+	Gamedata.propagateActionType(Gamedata.ActionType.CARD_PLAYED,5)
+	#another played played a card!
+	pass # Replace with function body.
+
 	
 func startGame():
 	###init the card game
@@ -119,8 +136,7 @@ func startGame():
 	var countsId = 1
 	for suit in suits:
 		for rank in ranks:
-			var card = BTCard.instantiate()
-			add_child(card)
+			var card = createBTCard()
 			card.initBTCardType(suit,rank,countsId)
 			allCards[countsId] = card
 			temporaryCardStack.push_back(card)
@@ -146,6 +162,9 @@ func startGame():
 	var firstHalf = directionOrientationArr.slice(0, selfPlayerOrientation)
 	var secondHalf = directionOrientationArr.slice(selfPlayerOrientation, directionOrientationArr.size())
 	directionOrientationArr =  secondHalf + firstHalf
+	#now this means, THE INDEX OF THE ARR IS THE CURRENT SCREEN ORIENTATION
+	# THE ELEMETNS OF THE ARR IS THE DIRECTIONAL ORIENTATION
+	# NOW THEY ARE MAPPED TO EACH OTHER!
 	
 
 	for currentScreenOrientation in range(PLAYER_COUNT): #bot left top right, in that order, the game will be played like that too.
@@ -175,12 +194,10 @@ func distributeCards(data):
 	var counter = 0
 	for i in range(NUM_CARDS_PER_PLAYER):
 		var card = data.temporaryCardStack.pop_back()
-		CardsOnPlayersHands[data.currentDirectionOrientation][card.id] = card
 		card.initBTCardOwner(data.isOwnedByCurrentPlayer,data.playerId,data.currentDirectionOrientation,data.currentScreenOrientation)
+		CardsOnPlayersHands[data.currentDirectionOrientation][card.id] = card
 		if(!data.isOwnedByCurrentPlayer):
-			card.restSnapPos = Vector2(initX+distance*counter+offSetX,
-			randi() % 600-300
-			)
+			card.restSnapPos = Vector2(initX+distance*counter+offSetX,randi() % 600-300) * Vector2.ZERO 
 		else: #you do own the card so lets put it on the bottom!!!
 			card.restSnapPos = Vector2(initX+distance*counter+offSetX,initY)
 		counter+=1  
@@ -196,6 +213,11 @@ func getScreenOriEnumStr(value):
 	return getEnumStr(ScreenOrientation,value)
 func getEnumStr(enums,value):
 	return enums.keys()[value]
+
+
+
+
+
 
 # 	if(Gamedata.playerIDList == 1): #you are always on the bottom.....
 # 		camera.rotation_degrees = 0
@@ -324,17 +346,12 @@ func getEnumStr(enums,value):
 
 	
 	
-# func _on_card_drop_area_2d_area_entered(area):
-# 	if(not area is Card):
-# 		return
-# 	var card: Card = area
-# 	card.isInDroppableArea = true
 
-# func _on_card_drop_area_2d_area_exited(area):
-# 	if(not area is Card):
-# 		return
-# 	var card: Card = area
-# 	card.isInDroppableArea = false
 
 # func _on_restart_game_button_pressed():
 # 	Gamedata.propagateActionType.rpc("RESTART","RPS")
+
+
+
+
+

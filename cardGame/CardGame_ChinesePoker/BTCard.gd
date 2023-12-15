@@ -19,6 +19,9 @@ func getScreenOriEnumStr(value):
 	return getEnumStr(ScreenOrientation,value)
 func getEnumStr(enums,value):
 	return enums.keys()[value]
+
+
+
 #all of the drag and drop animation stuff below
 var selected = false
 var flippedUp = true; #anything at card front z-index 6 is up, 4 is down

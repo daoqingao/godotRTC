@@ -19,7 +19,7 @@ enum GameType {
 
 #all player data that are involved
 var peerPlayers = {}
-var playerId = 20
+var playerId = 4444
 var pregeneratedSeed 
 var playersSignalConnectedAndReadiedCount = -1
 # @onready var RPSScene = preload("res://cardGame/CardGame_RPS/CardGame_RPS.tscn")
@@ -39,7 +39,7 @@ func propagateActionType(actionType, newRPSData):
 		playersSignalConnectedAndReadiedCount+=1
 		print("nums amount readied updated",playersSignalConnectedAndReadiedCount)
 	else:
-		propagateActionToGamemanager.emit(actionType,newRPSData)
+		propagateActionToPeers.emit(actionType,newRPSData)
 
 func startGame(gameType):
 	if(gameType==GameType.RPS):
@@ -88,4 +88,4 @@ func hostStartGameInitChinesePoker():
 			pregeneratedSeed=pregeneratedSeed
 		}) #list of all the players basically.
 
-signal propagateActionToGamemanager(actionType, newRPSData)
+signal propagateActionToPeers(actionType, newRPSData)

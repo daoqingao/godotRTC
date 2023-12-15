@@ -132,7 +132,7 @@ func handleOnCardIsPlayed(card):
 
 func _ready():
 	# print("reading, sohuld be called twice") #gets called twice thats good.....
-	Gamedata.propagateActionToGamemanager.connect(handlePropagatedAction)
+	Gamedata.propagateActionToPeers.connect(handlePropagatedAction)
 	Gamedata.propagateActionType.rpc_id(1,Gamedata.ActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED,{})
 
 func _process(delta):
