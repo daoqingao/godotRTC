@@ -51,6 +51,14 @@ var RankOrder = {
 	'A':11,
 	'2':12,
 }
+
+const PokerCard5ComboType = {
+	'straight':0, #5 cards in a row, different color
+	'flush':1, #colors
+	'full_house':2, #3 + 2 
+	'four_of_a_kind':3, #4 + 1
+	'straight_flush':4, #5 cards in a row, same color
+}
 @onready var PLAYED_CARDS_SNAP_POSITION = $DropArea/DropSnapPos.global_position
 
 ################################################# DATA THAT ARE RELATED TO THE GAME AND SHOULD BE THE SAME ACROSS ALL INSTANCE
@@ -71,10 +79,10 @@ var allCards = {} # <cardid : BTCard>
 ################################################# DATA THAT are related to the cards being played,
 #cards that are were last played. we need to compare to this
 var cardslastPlayedList = [] #array of card ids that werw last played
-var cardsLastPlayedComboType = CardPlayedComboType.SINGLE #something like that	
+var cardsLastPlayedComboType = CardPlayedComboType.FIRST_CARD_TO_PLAY_NO_CARDS_BEFORE #something like that	
 
-var cardsSelectedToPlayList = {} #array of card ids that are selected
-var cardsSelectedToPlayComboType = CardPlayedComboType.SINGLE #something like that
+var cardsSelectedToPlayList = [] #array of card ids that are selected
+var cardsSelectedToPlayComboType = CardPlayedComboType.FIRST_CARD_TO_PLAY_NO_CARDS_BEFORE #something like that
 
 
 
@@ -196,10 +204,10 @@ func _on_button_pressed():
 func handleOnCardIsSelected(card):
 	if(!card.isSelected):
 		card.restSnapPos = card.restSnapPos + Vector2(0,-50)
-		cardsSelectedToPlayList[card.id] = card
+		cardsSelectedToPlayList.push_back(card)
 	else:
 		card.restSnapPos = card.restSnapPos + Vector2(0,50)
-		cardsSelectedToPlayList.erase(card.id)
+		cardsSelectedToPlayList.erase(card)
 	print("selected card list",cardsSelectedToPlayList)
 	card.isSelected = !card.isSelected
 	playCardsButton.disabled = false if checkIfCardsSelectedIsPlayable() else true
@@ -219,33 +227,96 @@ func handleOnCardIsSelected(card):
 
 #card is only palyable if it beats the last card
 func checkIfCardsSelectedIsPlayable():
-	var cardsSelectedToPlayListSize = cardsSelectedToPlayList.size()
-	cardsSelectedToPlayComboType = PlayedSizeToComboType[cardsSelectedToPlayListSize] if PlayedSizeToComboType.has(cardsSelectedToPlayListSize) else CardPlayedComboType.INVALID_COMBO
-	checkIfCardToPlayBeatsLastPlayedCard(cardsSelectedToPlayList,cardsSelectedToPlayComboType,cardslastPlayedList,cardsLastPlayedComboType)
+	cardsSelectedToPlayComboType = getCardsListComboType(cardsSelectedToPlayList)
+	print("the combo ranking is")
+	print(cardsSelectedToPlayComboRanking)
+	# checkIfCardToPlayBeatsLastPlayedCard(cardsSelectedToPlayList,cardsSelectedToPlayComboType,cardslastPlayedList,cardsLastPlayedComboType)
 
-func checkIfCardToPlayBeatsLastPlayedCard(cardsToPlayList,cardsToPlayComboType,cardsToBeatList,cardToBeatComboType):
-	if(cardToBeatComboType != cardsToPlayComboType):
-		return false #if the combo type is not the same, then it is not playable
-	##switch case for the combo type
-	if(cardsToPlayComboType == CardPlayedComboType.SINGLE):
-		return checkIfSingleBeatable(cardsToPlayList,cardsToBeatList)
-	elif(cardsToPlayComboType == CardPlayedComboType.DOUBLE):
-		return checkIfDoubleBeatable(cardsToPlayList,cardsToBeatList)
+var cardsSelectedToPlayComboRanking = -1
 
-func checkIfSingleBeatable(cardsToPlayList,cardsToBeatList):
-	var cardToPlay = allCards[cardsToPlayList[0]]
-	var cardToBeat = allCards[cardsToBeatList[0]]
-
-func checkIfDoubleBeatable(cardsToPlayList,cardsToBeatList):
-	var cardToPlay1 = allCards[cardsToPlayList[0]]
-	var cardToPlay2 = allCards[cardsToPlayList[1]]
-	var cardToBeat1 = allCards[cardsToBeatList[0]]
-	var cardToBeat2 = allCards[cardsToBeatList[1]]
-	if(cardToPlay1.cardRank == cardToPlay2.cardRank):
-		return cardToPlay1.cardRank > cardToBeat1.cardRank
-	else:
-		return cardToPlay1.cardRank > cardToBeat1.cardRank and cardToPlay2.cardRank > cardToBeat2.cardRank
+func getCardsListComboType(cardsList):
+	var cardPlayedSize = cardsList.size()
+	if(cardPlayedSize == 1):
+		cardsSelectedToPlayComboRanking = getSingleComboRanking(cardsList)
+		return CardPlayedComboType.SINGLE
+	if(cardPlayedSize == 2):
+		if(cardsList[0].rank == cardsList[1].rank):
+			cardsSelectedToPlayComboRanking = getDoubleComboRanking(cardsList)
+			return CardPlayedComboType.DOUBLE
+	if(cardPlayedSize == 5):
+		return getQuintComboRanking(cardsList)
+	#invalid combo includes 0, non matching pairs, and non matching 5 card combos
+	return CardPlayedComboType.INVALID_COMBO
 	
+
+func getSingleComboRanking(cardsList):
+	var card = cardsList[0]
+	var cardSuit = card.suit
+	var cardRank = card.rank
+	var rankScalability = 5 #1 rank higher means 5 times higher than climbing a suit , just making so that pairs are easier to track
+	return RankOrder[cardRank]*rankScalability  + SuitOrder[cardSuit ]
+
+func getDoubleComboRanking(cardsList):
+	var card1 = cardsList[0]
+	var card2 = cardsList[1]
+	var doubleRanking = getSingleComboRanking([card1]) + getSingleComboRanking([card2])
+	#if any of them has a spade, it gets a +1
+	if(card1.suit == 'spades' or card2.suit == 'spades'):
+		doubleRanking += 1
+	return doubleRanking
+
+func getQuintComboRanking(cardsList):
+	var card1 = cardsList[0]
+	var card2 = cardsList[1]
+	var card3 = cardsList[2]
+	var card4 = cardsList[3]
+	var card5 = cardsList[4]
+
+	var comboRanking = 0
+	var ranksList = [card1.rank,card2.rank,card3.rank,card4.rank,card5.rank]
+	var suitsList = [card1.suit,card2.suit,card3.suit,card4.suit,card5.suit]
+	var ranksListRankings = [RankOrder[card1.rank],RankOrder[card2.rank],RankOrder[card3.rank],RankOrder[card4.rank],RankOrder[card5.rank]]
+	
+	
+	#check for straight....
+	ranksListRankings.sort()
+	if(ranksListRankings[0] == ranksListRankings[1]-1 and ranksListRankings[1] == ranksListRankings[2]-1 and ranksListRankings[2] == ranksListRankings[3]-1 and ranksListRankings[3] == ranksListRankings[4]-1):
+		#what determines the rank is the biggest single card in that straight
+		#goes through all the cardslist and returns the biggest number return by getSingleComboRanking
+		comboRanking = cardsList.reduce(	func(card1,card2): return card1 if getSingleComboRanking([card1]) > getSingleComboRanking([card2]) else card2)
+
+	
+	# #check for flush
+	# var suitsRankingMultiplier = 13 #
+	# if(suitsList[0] == suitsList[1] and suitsList[1] == suitsList[2] and suitsList[2] == suitsList[3] and suitsList[3] == suitsList[4]):
+	# 	comboRanking = RankOrder[suitsList[4]] #the highest ranking card in a flush would be 3
+	return comboRanking
+
+# func checkIfCardToPlayBeatsLastPlayedCard(cardsToPlayList,cardsToPlayComboType,cardsToBeatList,cardToBeatComboType):
+# 	if(cardToBeatComboType != cardsToPlayComboType):
+# 		return false #if the combo type is not the same, then it is not playable
+# 	##switch case for the combo type
+# 	if(cardsToPlayComboType == CardPlayedComboType.SINGLE):
+# 		return checkIfSingleBeatable(cardsToPlayList,cardsToBeatList)
+# 	elif(cardsToPlayComboType == CardPlayedComboType.DOUBLE):
+# 		return checkIfDoubleBeatable(cardsToPlayList,cardsToBeatList)
+
+# func checkIfSingleBeatable(cardsToPlayList,cardsToBeatList):
+# 	var cardToPlay = cardsToPlayList[0]
+# 	var cardToBeat = cardsToBeatList[0]
+# 	print(cardToPlay,cardToBeat)
+# func checkIfDoubleBeatable(cardsToPlayList,cardsToBeatList):
+# 	var cardToPlay1 = allCards[cardsToPlayList[0]]
+# 	var cardToPlay2 = allCards[cardsToPlayList[1]]
+# 	var cardToBeat1 = allCards[cardsToBeatList[0]]
+# 	var cardToBeat2 = allCards[cardsToBeatList[1]]
+# 	if(cardToPlay1.cardRank == cardToPlay2.cardRank):
+# 		return cardToPlay1.cardRank > cardToBeat1.cardRank
+# 	else:
+# 		return cardToPlay1.cardRank > cardToBeat1.cardRank and cardToPlay2.cardRank > cardToBeat2.cardRank
+	
+
+
 func lerpLastPlayedCardsToCenter():
 	if(cardsLastPlayedComboType == CardPlayedComboType.SINGLE):
 		var card = allCards[cardslastPlayedList[0]]
@@ -315,7 +386,7 @@ func startGame():
 	###init the card game
 	#shufflign deck
 	var suits = ['diamonds', 'clubs', 'hearts', 'spades']
-	var ranks = [ '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A' ,'2',]
+	var ranks = [ '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A' ,'2']
 	# suits.shuffle()
 	# ranks.shuffle()
 	var temporaryCardStack = [] 

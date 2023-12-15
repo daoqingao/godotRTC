@@ -28,6 +28,7 @@ var isInDroppableArea = false
 #chinese poker related things
 var suit := ""
 var rank := ""
+
 var id := -1
 
 var isOwnedByCurrentPlayer = false
