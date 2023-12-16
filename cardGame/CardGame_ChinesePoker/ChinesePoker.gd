@@ -214,20 +214,18 @@ func _on_play_cards_button_pressed():
 
 var testCardNum = 1
 func _on_button_pressed():
-	Gamedata.propagateActionType(Gamedata.ActionType.CARD_PLAYED,{
-		propagatedCardsPlayedByPlayerId = 1,
-		propagatedCardsPlayedByDirectionalOrientation = selfPlayerDirectionalOrientation,
-		propagatedCardsSelectedToPlayIdList = [testCardNum],
-		propagatedCardsSelectedToPlayComboType = CardPlayedComboType.SINGLE,
-		propagatedCardsSelectedToPlayQuintComboType = cardsSelectedToPlayQuintComboType,
-		propagatedCardsSelectedToPlayComboOrdering = cardsSelectedToPlayComboOrdering
-	})
-	testCardNum+=1
+	#simulate a ai playing for the next turn.
+	#just play any random playable card. if playable. #50 percent of skipping your own turn as well lol
+
 	# Gamedata.propagateActionType(Gamedata.ActionType.CARD_PLAYED,{
-	# 	cardsIdPlayedList = [1,5,6,7,8],
-	# 	cardsPlayedType = CardPlayedComboType.COMBO
+	# 	propagatedCardsPlayedByPlayerId = 1,
+	# 	propagatedCardsPlayedByDirectionalOrientation = selfPlayerDirectionalOrientation,
+	# 	propagatedCardsSelectedToPlayIdList = [testCardNum],
+	# 	propagatedCardsSelectedToPlayComboType = CardPlayedComboType.SINGLE,
+	# 	propagatedCardsSelectedToPlayQuintComboType = cardsSelectedToPlayQuintComboType,
+	# 	propagatedCardsSelectedToPlayComboOrdering = cardsSelectedToPlayComboOrdering
 	# })
-	#another played played a card!
+	# testCardNum+=1
 	pass # Replace with function body.
 
 
@@ -253,7 +251,11 @@ func handleOnCardIsSelected(card):
 
 #card is only palyable if it beats the last card
 func checkIfCardsSelectedIsPlayable():
-	cardsSelectedToPlayComboType = calculateCardsListComboTypeAndOrdering(cardsSelectedToPlayList)
+	var cardsComboAndOrderingData = getCardsListComboTypeAndOrdering(cardsSelectedToPlayList)
+	cardsSelectedToPlayComboType = cardsComboAndOrderingData.comboType
+	cardsSelectedToPlayComboOrdering = cardsComboAndOrderingData.comboOrdering
+	cardsSelectedToPlayQuintComboType = cardsComboAndOrderingData.quintComboType
+
 	if(cardsSelectedToPlayComboType != CardPlayedComboType.INVALID_COMBO):
 		if(cardsLastPlayedComboType == CardPlayedComboType.FIRST_CARD_TO_PLAY_NO_CARDS_BEFORE):
 			return true
@@ -269,29 +271,38 @@ func checkIfCardsSelectedIsPlayable():
 
 	# checkIfCardToPlayBeatsLastPlayedCard(cardsSelectedToPlayList,cardsSelectedToPlayComboType,cardsLastPlayedList,cardsLastPlayedComboType)
 
+#returns 3 things, the combo type, the combo ordering, and the quint combo type
+#modular function to get the combo type and ordering of the cards
+func getCardsListComboTypeAndOrdering(cardsList):
+	var localCardsSelectedToPlayComboOrdering = -1
+	var localCardsSelectedToPlayComboType = CardPlayedComboType.INVALID_COMBO
+	var localCardsSelectedToPlayQuintComboType = QuintComboType.NO_QUINT_COMBO #something like that
 
-func calculateCardsListComboTypeAndOrdering(cardsList):
-	#reset combos when newly checking
-	cardsSelectedToPlayQuintComboType = QuintComboType.NO_QUINT_COMBO #something like that
-	cardsSelectedToPlayComboOrdering = -1
-	cardsSelectedToPlayComboType = CardPlayedComboType.INVALID_COMBO
 	var cardPlayedSize = cardsList.size()
 	if(cardPlayedSize == 1):
-		cardsSelectedToPlayComboOrdering = getSingleComboOrdering(cardsList)
-		return CardPlayedComboType.SINGLE
-	if(cardPlayedSize == 2):
+		localCardsSelectedToPlayComboOrdering = getSingleComboOrdering(cardsList)
+
+		localCardsSelectedToPlayComboType = CardPlayedComboType.SINGLE
+	elif(cardPlayedSize == 2):
 		if(cardsList[0].rank == cardsList[1].rank):
-			cardsSelectedToPlayComboOrdering = getDoubleComboOrdering(cardsList)
-			return CardPlayedComboType.DOUBLE
-	if(cardPlayedSize == 5):
-		cardsSelectedToPlayComboOrdering = getQuintComboOrdering(cardsList)
-		if(cardsSelectedToPlayComboOrdering == -1):
-			return CardPlayedComboType.INVALID_COMBO
-		return CardPlayedComboType.QUINT
-	#invalid combo includes 0, non matching pairs, and non matching 5 card combos
-	# cardsSelectedToPlayComboOrdering = -1
-	return CardPlayedComboType.INVALID_COMBO
+			localCardsSelectedToPlayComboOrdering = getDoubleComboOrdering(cardsList)
+			localCardsSelectedToPlayComboType = CardPlayedComboType.DOUBLE
+	elif(cardPlayedSize == 5):
+		var quintComboData = getQuintComboOrdering(cardsList)
+		localCardsSelectedToPlayComboOrdering = quintComboData.comboOrdering
+		localCardsSelectedToPlayQuintComboType = quintComboData.quintComboType
+		if(localCardsSelectedToPlayQuintComboType == QuintComboType.NO_QUINT_COMBO):
+			localCardsSelectedToPlayComboType = CardPlayedComboType.INVALID_COMBO
+		else: 
+			localCardsSelectedToPlayComboType = CardPlayedComboType.QUINT
+	else:
+		localCardsSelectedToPlayComboType = CardPlayedComboType.INVALID_COMBO
 	
+	return {
+		"comboType":localCardsSelectedToPlayComboType,
+		"comboOrdering":localCardsSelectedToPlayComboOrdering,
+		"quintComboType":localCardsSelectedToPlayQuintComboType
+	}
 
 func getSingleComboOrdering(cardsList):
 	var card = cardsList[0]
@@ -312,13 +323,15 @@ func getDoubleComboOrdering(cardsList):
 	return doubleRanking
 
 func getQuintComboOrdering(cardsList):
+
 	var card1 = cardsList[0]
 	var card2 = cardsList[1]
 	var card3 = cardsList[2]
 	var card4 = cardsList[3]
 	var card5 = cardsList[4]
 
-	var comboRanking = -1
+	var localCardsSelectedToPlayQuintComboType = QuintComboType.NO_QUINT_COMBO #something like that
+	var localComboOrdering = -1
 	# var ranksList = [card1.rank,card2.rank,card3.rank,card4.rank,card5.rank]
 	var suitsList = [card1.suit,card2.suit,card3.suit,card4.suit,card5.suit]
 	var ranksListRankings = [RankOrdering[card1.rank],RankOrdering[card2.rank],RankOrdering[card3.rank],RankOrdering[card4.rank],RankOrdering[card5.rank]]
@@ -336,23 +349,27 @@ func getQuintComboOrdering(cardsList):
 	if(ranksListRankings[0] == ranksListRankings[1]-1 and ranksListRankings[1] == ranksListRankings[2]-1 and ranksListRankings[2] == ranksListRankings[3]-1 and ranksListRankings[3] == ranksListRankings[4]-1):
 		#what determines the rank is the biggest single card in that straight
 		var singleCard = cardsList.reduce(	func(cardA,cardB): return cardA if getSingleComboOrdering([cardA]) > getSingleComboOrdering([cardB]) else cardB)
-		comboRanking += getSingleComboOrdering([singleCard])
+		localComboOrdering += getSingleComboOrdering([singleCard])
 		#max is 69
-		cardsSelectedToPlayQuintComboType = QuintComboType.STRAIGHT
+		localCardsSelectedToPlayQuintComboType = QuintComboType.STRAIGHT
 		isStraightFlag = true
 	#check for flush
 	if(suitsList[0] == suitsList[1] and suitsList[1] == suitsList[2] and suitsList[2] == suitsList[3] and suitsList[3] == suitsList[4]):
-		comboRanking+= straightsMaxRanking #always bigger than straight
+		localComboOrdering+= straightsMaxRanking #always bigger than straight
 		#biggest card of the flush determines the ranking
 		var singleCard = cardsList.reduce(	func(cardA,cardB): return cardA if getSingleComboOrdering([cardA]) > getSingleComboOrdering([cardB]) else cardB)
-		comboRanking += SuitOrdering[singleCard.suit]*13 + RankOrdering[singleCard.rank]
-		cardsSelectedToPlayQuintComboType = QuintComboType.FLUSH
+		localComboOrdering += SuitOrdering[singleCard.suit]*13 + RankOrdering[singleCard.rank]
+		localCardsSelectedToPlayQuintComboType = QuintComboType.FLUSH
 		#min is 69 + 1*13 + 1 = 83
 		#max is 69 + 4*13 + 12 = 139
 		if(isStraightFlag):
-			cardsSelectedToPlayQuintComboType = QuintComboType.STRAIGHT_FLUSH
-			comboRanking+= fourOfAKindMaxRanking #will get the added bonus of always being bigger than 4 of a kind
-			return comboRanking #just end it right here because it is the biggest... no need to check for full house or four of a kind
+			localCardsSelectedToPlayQuintComboType = QuintComboType.STRAIGHT_FLUSH
+			localComboOrdering+= fourOfAKindMaxRanking #will get the added bonus of always being bigger than 4 of a kind
+			#special condition for the royal flush.
+			return {
+				"comboOrdering":localComboOrdering,
+				"quintComboType":localCardsSelectedToPlayQuintComboType
+			}
 			#min is 83 + 165 = 248
 			#max is 139 + 165 = 304
 			#max is 165 + 139 
@@ -362,30 +379,33 @@ func getQuintComboOrdering(cardsList):
 	if( (ranksListRankings[0] == ranksListRankings[1] and ranksListRankings[2] == ranksListRankings[3] and ranksListRankings[3] == ranksListRankings[4]) #pair is at the front
 		or (ranksListRankings[0] == ranksListRankings[1] and ranksListRankings[1] == ranksListRankings[2] and ranksListRankings[3] == ranksListRankings[4]) #pair is at the back
 		):
-		comboRanking+= flushMaxRanking #always bigger than flush
+		localComboOrdering+= flushMaxRanking #always bigger than flush
 		#check which rank is the triple
 		var tripleRank =  ranksListRankings[2] #IT ALWAYS NEEDS TO BE IN THE MIDDLE... its either 22333 or 33322 lol
-		comboRanking+= tripleRank
+		localComboOrdering+= tripleRank
 		#min is 139 + 1 = 140
 		#max is 139 + 13 = 152
-		cardsSelectedToPlayQuintComboType = QuintComboType.FULL_HOUSE
+		localCardsSelectedToPlayQuintComboType = QuintComboType.FULL_HOUSE
 
 	#check for four of a kind
 	#contains a single and a quad
 	if( (ranksListRankings[0] == ranksListRankings[1] and ranksListRankings[1] == ranksListRankings[2] and ranksListRankings[2] == ranksListRankings[3]) #quad is at the front
 		or (ranksListRankings[1] == ranksListRankings[2] and ranksListRankings[2] == ranksListRankings[3] and ranksListRankings[3] == ranksListRankings[4]) #quad is at the back
 		):
-		comboRanking+= fullHouseMaxRanking #always bigger than full house
+		localComboOrdering+= fullHouseMaxRanking #always bigger than full house
 		var quadRank =  ranksListRankings[2] #quad would be in the middle if its 22223 or 32222
-		comboRanking+= quadRank
+		localComboOrdering+= quadRank
 		#min is 152 + 1 = 153
 		#max is 152 + 13 = 165
-		cardsSelectedToPlayQuintComboType = QuintComboType.FOUR_OF_A_KIND
+		localCardsSelectedToPlayQuintComboType = QuintComboType.FOUR_OF_A_KIND
 
 	#check for royal flush
 	#contains a straight and a flush
 
-	return comboRanking
+	return {
+		"comboOrdering":localComboOrdering,
+		"quintComboType":localCardsSelectedToPlayQuintComboType
+	}
 
 func lerpCardsToCenter(cardsList,cardComboType):
 	if(cardComboType == CardPlayedComboType.SINGLE):
