@@ -62,9 +62,9 @@ var RPSRPCData = {
 #rpc signals
 func handlePropagatedAction(actionType, newRPSData):
 	print("receives", actionType)
-	if(actionType==Gamedata.ActionType.CARD_PLAYED):
+	if(actionType==Gamedata.ConnectionActionType.CARD_PLAYED):
 		handlePropagatedCardPlayed(newRPSData)
-	if(actionType==Gamedata.ActionType.INIT):
+	if(actionType==Gamedata.ConnectionActionType.INIT):
 		handlePropagatedInit(newRPSData)
 
 
@@ -120,7 +120,7 @@ func handleOnCardIsPlayed(card):
 	print(RPSRPCData.cardsPlayedId)
 	if(RPSRPCData.cardsPlayedId[playerType]!= null):
 		return #not allowing you to play more cards until both are cleared
-	Gamedata.propagateActionType.rpc(Gamedata.ActionType.CARD_PLAYED,{
+	Gamedata.propagateActionType.rpc(Gamedata.ConnectionActionType.CARD_PLAYED,{
 		cardIdPlayed = card.cardId,
 		playerTypeThatPlayedIt = playerType
 	})
@@ -133,7 +133,7 @@ func handleOnCardIsPlayed(card):
 func _ready():
 	# print("reading, sohuld be called twice") #gets called twice thats good.....
 	Gamedata.propagateActionToPeers.connect(handlePropagatedAction)
-	Gamedata.propagateActionType.rpc_id(1,Gamedata.ActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED,{})
+	Gamedata.propagateActionType.rpc_id(1,Gamedata.ConnectionActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED,{})
 
 func _process(delta):
 	ScoreboardText.text = "You are currently: ,"+ str(Gamedata.playerId) + "Host: "+ str(RPSRPCData.score[playerTypes.HOST]) + "CLIENT: "+ str(RPSRPCData.score[playerTypes.CLIENT]) + "TIE: "+ str(RPSRPCData.score["TIE"])
@@ -194,4 +194,4 @@ func _on_card_drop_area_2d_area_exited(area):
 	card.isInDroppableArea = false
 
 func _on_restart_game_button_pressed():
-	Gamedata.propagateActionType.rpc(Gamedata.ActionType.RESTART,Gamedata.GameType.RPS)
+	Gamedata.propagateActionType.rpc(Gamedata.ConnectionActionType.RESTART,Gamedata.GameType.RPS)

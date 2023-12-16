@@ -81,7 +81,7 @@ var CardsOnPlayersHands = { #THESE ARE ALSO THE INDEX!!!!!!! 0,1,2,3
 	DirectionOrientation.EAST:{},
 }
 var allCards = {} # <cardid : BTCard>
-var currentTurn = DirectionOrientation.SOUTH #the player that is currently playing #
+var currentTurnDirectionalOrientation = DirectionOrientation.EAST #the player that is currently playing #
 
 
 
@@ -98,11 +98,11 @@ var cardsLastPlayedPlayerId = -1
 var cardsLastPlayedDirectionalOrientation = -1
 
 
-
 var cardsSelectedToPlayList = [] #array of card that are selected
 var cardsSelectedToPlayComboType = CardPlayedComboType.INVALID_COMBO #something like that
 var cardsSelectedToPlayQuintComboType = QuintComboType.NO_QUINT_COMBO #something like that
 var cardsSelectedToPlayComboOrdering = -1
+
 
 
 #this one is not the same across all instance ############################# DATA THAT ARE RELATED TO SELF CLIENT PLAYER
@@ -123,7 +123,7 @@ var selfDirectionOriToScreenOri = {
 func _ready():
 	# print("reading, sohuld be called twice") #gets called twice thats good.....
 	Gamedata.propagateActionToPeers.connect(handlePropagatedAction)
-	Gamedata.propagateActionType.rpc_id(1,Gamedata.ActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED,{})
+	Gamedata.propagateActionType.rpc_id(1,Gamedata.ConnectionActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED,{})
 	#stubbed data to init with 4 players
 	handlePropagatedInit({
 			peerPlayers= {
@@ -137,16 +137,25 @@ func _ready():
 	# Gamedata.playerId = 20 this is done in the gamedata, also need to remove that stub
 
 
-
+#
+enum BTActionType {
+	TURN_PLAYED,
+	TURN_PASSED
+}
 
 #rpc signals
-func handlePropagatedAction(actionType, propagatedData):
-	if(actionType==Gamedata.ActionType.CARD_PLAYED):
-		handlePropagatedCardPlayed(propagatedData)
-	if(actionType==Gamedata.ActionType.INIT):
+func handlePropagatedAction(connectionActionType, propagatedData, propagatedGameActionType = -1):
+	if(connectionActionType==Gamedata.ConnectionActionType.INIT):
 		handlePropagatedInit(propagatedData)
+	if(connectionActionType==Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION):
+		print("handling a propagated game action")
+		if(propagatedGameActionType==BTActionType.TURN_PLAYED):
+			handlePropagatedTurnPlayed(propagatedData)
+		if(propagatedGameActionType==BTActionType.TURN_PASSED):
+			handlePropagatedTurnPassed(propagatedData)
 
-func handlePropagatedCardPlayed(propagatedData):
+
+func handlePropagatedTurnPlayed(propagatedData):
 
 	var cardsLastToPlayIdList = propagatedData.propagatedCardsSelectedToPlayIdList
 	cardsLastPlayedComboType = propagatedData.propagatedCardsSelectedToPlayComboType
@@ -155,7 +164,20 @@ func handlePropagatedCardPlayed(propagatedData):
 	cardsLastPlayedList = cardsLastToPlayIdList.map(func(cardId): return allCards[cardId])
 	cardsLastPlayedPlayerId = propagatedData.propagatedCardsPlayedByPlayerId
 	cardsLastPlayedDirectionalOrientation = propagatedData.propagatedCardsPlayedByDirectionalOrientation
+
+
+	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(cardsLastPlayedDirectionalOrientation) #this is the next player turn
+
 	lerpCardsToCenter(cardsLastPlayedList,cardsLastPlayedComboType)
+
+
+	_log(getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + " played a " + getEnumStr(CardPlayedComboType,cardsLastPlayedComboType) + " ordering" + str(cardsLastPlayedComboOrdering))
+	return
+
+func handlePropagatedTurnPassed(propagatedData):
+	var playerDirectionPassed = propagatedData.propagatedCardsPlayedByDirectionalOrientation
+	_log(getDirectionOriEnumStr(playerDirectionPassed)+ " passed")
+	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(propagatedData.propagatedCardsPlayedByDirectionalOrientation) #this is the next player turn
 	return
 
 func handlePropagatedInit(propagatedData):
@@ -166,73 +188,95 @@ func handlePropagatedInit(propagatedData):
 	seed(propagatedData.pregeneratedSeed)
 	startGame()
 
-
-
-#card signals
-
-# func handleOnCardIsPlayed(card):
-# 	# card.restSnapPos = PLAYED_CARDS_SNAP_POSITION
-# 	# print(card,"is played")
-# 	# Gamedata.propagateActionType(Gamedata.ActionType.CARD_PLAYED,card.id)
-# 	return
-
-
-
-#event handlers
-
-# func _on_drop_area_area_entered(area):
-# 	if(not area is BTCard):
-# 		return
-# 	var card: BTCard = area
-# 	card.isInDroppableArea = true
-
-# func _on_drop_area_area_exited(area):
-# 	if(not area is BTCard):
-# 		return
-# 	var card: BTCard = area
-# 	card.isInDroppableArea = false
-
-var testCardPlayed = 1
-
-
-
 ####################### Event Handlers For Buttons On UI
 func _on_play_cards_button_pressed():
-	lerpCardsToCenter(cardsSelectedToPlayList,cardsSelectedToPlayComboType)
 
-	Gamedata.propagateActionType(Gamedata.ActionType.CARD_PLAYED,{
+
+	if(!currentTurnDirectionalOrientation == selfPlayerDirectionalOrientation):
+		print("not your turn")
+		return
+	Gamedata.propagateActionType(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
 		propagatedCardsPlayedByPlayerId = Gamedata.playerId,
 		propagatedCardsPlayedByDirectionalOrientation = selfPlayerDirectionalOrientation,
 		propagatedCardsSelectedToPlayIdList = cardsSelectedToPlayList.map(func(card): return card.id),
 		propagatedCardsSelectedToPlayComboType = cardsSelectedToPlayComboType,
 		propagatedCardsSelectedToPlayQuintComboType = cardsSelectedToPlayQuintComboType,
 		propagatedCardsSelectedToPlayComboOrdering = cardsSelectedToPlayComboOrdering
-	})
+	}, BTActionType.TURN_PLAYED)
+	lerpCardsToCenter(cardsSelectedToPlayList,cardsSelectedToPlayComboType)
+ 
+	pass # Replace with function body.
 
+func _on_pass_turn_button_pressed():
+	if(!currentTurnDirectionalOrientation == selfPlayerDirectionalOrientation):
+		print("not your turn")
+		return
+	Gamedata.propagateActionType(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
+		propagatedCardsPlayedByPlayerId = Gamedata.playerId,
+		propagatedCardsPlayedByDirectionalOrientation = selfPlayerDirectionalOrientation,
+	}, BTActionType.TURN_PASSED)
 	pass # Replace with function body.
 
 
-var testCardNum = 1
+
 func _on_button_pressed():
-	#simulate a ai playing for the next turn.
-	#just play any random playable card. if playable. #50 percent of skipping your own turn as well lol
+	#a bot plays a card randomly
+	makeComputerPlayACard()
 
-	# Gamedata.propagateActionType(Gamedata.ActionType.CARD_PLAYED,{
-	# 	propagatedCardsPlayedByPlayerId = 1,
-	# 	propagatedCardsPlayedByDirectionalOrientation = selfPlayerDirectionalOrientation,
-	# 	propagatedCardsSelectedToPlayIdList = [testCardNum],
-	# 	propagatedCardsSelectedToPlayComboType = CardPlayedComboType.SINGLE,
-	# 	propagatedCardsSelectedToPlayQuintComboType = cardsSelectedToPlayQuintComboType,
-	# 	propagatedCardsSelectedToPlayComboOrdering = cardsSelectedToPlayComboOrdering
-	# })
-	# testCardNum+=1
-	pass # Replace with function body.
 
+func makeComputerPlayACard():
+	#make a random card play
+	print("making a computer play a card")
+	print("for the player of directional orientation",getEnumStr(DirectionOrientation,currentTurnDirectionalOrientation))
+	var computerCardsOnHand = CardsOnPlayersHands[currentTurnDirectionalOrientation]
+	var computerCardsSelectedToPlayList = []
+	var computerCardsSelectedToPlayComboType = CardPlayedComboType.INVALID_COMBO
+	var computerCardsSelectedToPlayQuintComboType = QuintComboType.NO_QUINT_COMBO
+	var computerCardsSelectedToPlayComboOrdering = -1
+	var foundAPlayableCard = false
+
+	if cardsLastPlayedComboType == CardPlayedComboType.FIRST_CARD_TO_PLAY_NO_CARDS_BEFORE or cardsLastPlayedComboType == CardPlayedComboType.SINGLE:
+		#play a single card that is allowed to be played. else pass
+		#check for every single card.
+		for card in computerCardsOnHand.values():
+			var cardsSelectedToPlayList = [card]
+			var cardsSelectedComboAndOrderingData = getCardsListComboTypeAndOrdering(cardsSelectedToPlayList)
+			foundAPlayableCard = cardsSelectedComboAndOrderingData.comboCanBePlayedFlag
+			if(foundAPlayableCard):
+				computerCardsSelectedToPlayList.push_back(card)
+				computerCardsSelectedToPlayComboType = cardsSelectedComboAndOrderingData.comboType
+				computerCardsSelectedToPlayComboOrdering = cardsSelectedComboAndOrderingData.comboOrdering
+				computerCardsSelectedToPlayQuintComboType = cardsSelectedComboAndOrderingData.quintComboType
+				break
+
+	if(foundAPlayableCard):
+		Gamedata.propagateActionType(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
+			propagatedCardsPlayedByPlayerId = -1000,
+			propagatedCardsPlayedByDirectionalOrientation = currentTurnDirectionalOrientation,
+			propagatedCardsSelectedToPlayIdList = computerCardsSelectedToPlayList.map(func(card): return card.id),
+			propagatedCardsSelectedToPlayComboType = computerCardsSelectedToPlayComboType,
+			propagatedCardsSelectedToPlayQuintComboType = computerCardsSelectedToPlayQuintComboType,
+			propagatedCardsSelectedToPlayComboOrdering = computerCardsSelectedToPlayComboOrdering
+		}, BTActionType.TURN_PLAYED)
+	else:
+		Gamedata.propagateActionType(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
+			propagatedCardsPlayedByPlayerId = -1000,
+			propagatedCardsPlayedByDirectionalOrientation = currentTurnDirectionalOrientation,
+		}, BTActionType.TURN_PASSED)
 
 ####################### Event Handlers For Cards
 
 
 #function to move the cards slight up when selected and back down when deselected
+
+#move from SOTUH to WEST to NORTH to EAST to SOUTH
+func cycleToNextPlayerTurn(directionalOrientation):
+	print("current turn is",getDirectionOriEnumStr(directionalOrientation))
+
+	var nextPlayerTurn = (directionalOrientation+1) % PLAYER_COUNT
+	print("next turn is",getDirectionOriEnumStr(nextPlayerTurn))
+	return nextPlayerTurn
+
 func handleOnCardIsSelected(card):
 	if(!card.isSelected):
 		card.restSnapPos = card.restSnapPos + Vector2(0,-50)
@@ -242,34 +286,24 @@ func handleOnCardIsSelected(card):
 		cardsSelectedToPlayList.erase(card)
 	print("selected card list",cardsSelectedToPlayList)
 	card.isSelected = !card.isSelected
-	playCardsButton.disabled = false if checkIfCardsSelectedIsPlayable() else true
-	return
-	
+
+
+	var cardsComboAndOrderingData = getCardsListComboTypeAndOrdering(cardsSelectedToPlayList)
+	var comboCanBePlayedFlag = cardsComboAndOrderingData.comboCanBePlayedFlag
+	# playCardsButton.disabled = false if comboCanBePlayedFlag else true
+	print(comboCanBePlayedFlag)
+	if(comboCanBePlayedFlag):
+		playCardsButton.disabled = false
+		#set global variable to the cards selected to play
+		cardsSelectedToPlayComboType = cardsComboAndOrderingData.comboType
+		cardsSelectedToPlayComboOrdering = cardsComboAndOrderingData.comboOrdering
+		cardsSelectedToPlayQuintComboType = cardsComboAndOrderingData.quintComboType
+	else:
+		playCardsButton.disabled = true
 
 
 ####################### GAMEPLAY FUNCTIONS
 
-#card is only palyable if it beats the last card
-func checkIfCardsSelectedIsPlayable():
-	var cardsComboAndOrderingData = getCardsListComboTypeAndOrdering(cardsSelectedToPlayList)
-	cardsSelectedToPlayComboType = cardsComboAndOrderingData.comboType
-	cardsSelectedToPlayComboOrdering = cardsComboAndOrderingData.comboOrdering
-	cardsSelectedToPlayQuintComboType = cardsComboAndOrderingData.quintComboType
-
-	if(cardsSelectedToPlayComboType != CardPlayedComboType.INVALID_COMBO):
-		if(cardsLastPlayedComboType == CardPlayedComboType.FIRST_CARD_TO_PLAY_NO_CARDS_BEFORE):
-			return true
-		if(cardsSelectedToPlayComboType == cardsLastPlayedComboType):
-			if(cardsSelectedToPlayComboOrdering > cardsLastPlayedComboOrdering):
-				return true
-			else:
-				return false
-		else:
-			return false
-	else:
-		return false
-
-	# checkIfCardToPlayBeatsLastPlayedCard(cardsSelectedToPlayList,cardsSelectedToPlayComboType,cardsLastPlayedList,cardsLastPlayedComboType)
 
 #returns 3 things, the combo type, the combo ordering, and the quint combo type
 #modular function to get the combo type and ordering of the cards
@@ -277,11 +311,11 @@ func getCardsListComboTypeAndOrdering(cardsList):
 	var localCardsSelectedToPlayComboOrdering = -1
 	var localCardsSelectedToPlayComboType = CardPlayedComboType.INVALID_COMBO
 	var localCardsSelectedToPlayQuintComboType = QuintComboType.NO_QUINT_COMBO #something like that
+	var localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = false
 
 	var cardPlayedSize = cardsList.size()
 	if(cardPlayedSize == 1):
 		localCardsSelectedToPlayComboOrdering = getSingleComboOrdering(cardsList)
-
 		localCardsSelectedToPlayComboType = CardPlayedComboType.SINGLE
 	elif(cardPlayedSize == 2):
 		if(cardsList[0].rank == cardsList[1].rank):
@@ -298,10 +332,25 @@ func getCardsListComboTypeAndOrdering(cardsList):
 	else:
 		localCardsSelectedToPlayComboType = CardPlayedComboType.INVALID_COMBO
 	
+	# check if the cards can be played compared to the last played card
+
+	#they need to be the same combo type, and the ranking needs to be greater
+	if(localCardsSelectedToPlayComboType != CardPlayedComboType.INVALID_COMBO):
+		if(cardsLastPlayedComboType == CardPlayedComboType.FIRST_CARD_TO_PLAY_NO_CARDS_BEFORE):
+			localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = true
+		elif(localCardsSelectedToPlayComboType == cardsLastPlayedComboType):
+			if(localCardsSelectedToPlayComboOrdering > cardsLastPlayedComboOrdering):
+				localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = true
+		# 	else:
+		# 		localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = false
+		# else:
+		# 	localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = false
+
 	return {
 		"comboType":localCardsSelectedToPlayComboType,
 		"comboOrdering":localCardsSelectedToPlayComboOrdering,
-		"quintComboType":localCardsSelectedToPlayQuintComboType
+		"quintComboType":localCardsSelectedToPlayQuintComboType,
+		"comboCanBePlayedFlag":localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard
 	}
 
 func getSingleComboOrdering(cardsList):
@@ -407,19 +456,22 @@ func getQuintComboOrdering(cardsList):
 		"quintComboType":localCardsSelectedToPlayQuintComboType
 	}
 
+var numCardsZIndexCounter = 3
 func lerpCardsToCenter(cardsList,cardComboType):
 	if(cardComboType == CardPlayedComboType.SINGLE):
 		var card = cardsList[0]
 		card.restSnapPos = PLAYED_CARDS_SNAP_POSITION
-		card.z_index = 3
+		card.z_index = numCardsZIndexCounter
+		numCardsZIndexCounter+=1
 		return
 	elif(cardComboType == CardPlayedComboType.DOUBLE):
 		var card1 = cardsList[0]
 		var card2 = cardsList[1]
 		card1.restSnapPos = PLAYED_CARDS_SNAP_POSITION
 		card2.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(100,0)
-		card1.z_index = 3
-		card2.z_index = 3
+		card1.z_index = numCardsZIndexCounter
+		card2.z_index = numCardsZIndexCounter
+		numCardsZIndexCounter += 1
 		return
 	elif(cardComboType == CardPlayedComboType.QUINT):
 		var card1 = cardsList[0]
@@ -432,11 +484,12 @@ func lerpCardsToCenter(cardsList,cardComboType):
 		card3.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(200,0)
 		card4.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(300,0)
 		card5.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(400,0)
-		card1.z_index = 3
-		card2.z_index = 3
-		card3.z_index = 3
-		card4.z_index = 3
-		card5.z_index = 3
+		card1.z_index = numCardsZIndexCounter
+		card2.z_index = numCardsZIndexCounter
+		card3.z_index = numCardsZIndexCounter
+		card4.z_index = numCardsZIndexCounter
+		card5.z_index = numCardsZIndexCounter
+		numCardsZIndexCounter +=1
 		return
 	else:
 		print("error, card combo type not found")
@@ -480,13 +533,12 @@ func startGame():
 	var countsId = 1
 	for suit in suits:
 		for rank in ranks:
-
 			var card = createBTCard()
 			card.initBTCardType(suit,rank,countsId)
 			allCards[countsId] = card
 			temporaryCardStack.push_back(card)
 			countsId +=1
-	# temporaryCardStack.shuffle()
+	temporaryCardStack.shuffle()
 	print("started game #pretend we are drawing cards here")
 	#assigning screen positions and orientations
 	for playerIdListIdx in range(PLAYER_COUNT):
@@ -562,7 +614,9 @@ func _process(delta):
 	Your combo is: " + getEnumStr(CardPlayedComboType,cardsSelectedToPlayComboType) + "
 	Your quint combo is: " + getEnumStr(QuintComboType,cardsSelectedToPlayQuintComboType) + "
 	Your combo ordering is: " + str(cardsSelectedToPlayComboOrdering) + "
-	Curr turn is: " + getDirectionOriEnumStr(currentTurn) + ""
+	Current turn is: " + getDirectionOriEnumStr(currentTurnDirectionalOrientation) + "
+	Last Player Played Directional Orientation is: " + getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + "
+	"
 
 	$OtherPlayerCardsPlayedInfo.text = "
 	Last played combo is: " + getEnumStr(CardPlayedComboType,cardsLastPlayedComboType) + "
@@ -571,3 +625,5 @@ func _process(delta):
 	Last played by player id: " + str(cardsLastPlayedPlayerId) + "
 	Last played by directional orientation: " + getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + "
 	"
+
+

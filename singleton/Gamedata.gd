@@ -7,11 +7,12 @@ const ChinesePokerScenePath = "res://cardGame/CardGame_ChinesePoker/ChinesePoker
 const LobbyScenePath = "res://connection/scene/ClientConnect.tscn"
 const RPSScenePath = "res://cardGame/CardGame_RPS/CardGame_RPS.tscn"
 const HOST_ID = 1;
-enum ActionType {
+enum ConnectionActionType {
 	PLAYER_SIGNAL_CONNECTED_AND_READIED,
 	INIT,
-	CARD_PLAYED,
-	RESTART
+	# CARD_PLAYED,
+	RESTART,
+	PROPAGATE_GAME_ACTION,
 }
 enum GameType {
 	CHINESE_POKER,RPS
@@ -32,15 +33,20 @@ func _ready():
 	return
 
 @rpc("any_peer", "call_local")
-func propagateActionType(actionType, newRPSData):
-	if(actionType==ActionType.RESTART):
+#propagatedActionType argument is optional argument
+func propagateActionType(connectionActionType, newRPSData, propagatedGameActionType=-1):
+	if(connectionActionType==ConnectionActionType.RESTART):
 		startGame(newRPSData)
-	elif(actionType==ActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED):
+	elif(connectionActionType==ConnectionActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED):
 		playersSignalConnectedAndReadiedCount+=1
 		print("nums amount readied updated",playersSignalConnectedAndReadiedCount)
+	elif(connectionActionType==ConnectionActionType.INIT):
+		propagateActionToPeers.emit(connectionActionType,newRPSData)
+	elif(connectionActionType==ConnectionActionType.PROPAGATE_GAME_ACTION):
+		propagateActionToPeers.emit(connectionActionType,newRPSData, propagatedGameActionType)
 	else:
-		propagateActionToPeers.emit(actionType,newRPSData)
-
+		print("propagated action type not found",connectionActionType)
+		
 func startGame(gameType):
 	if(gameType==GameType.RPS):
 		hostStartGameInitRPSData()
@@ -60,7 +66,7 @@ func hostStartGameInitRPSData():
 		while (self.playersSignalConnectedAndReadiedCount!= 2):
 			await get_tree().create_timer(0.25).timeout
 		pregeneratedSeed = randi() #this thing will ALWAYS BE THE SAME throughout the game
-		propagateActionType.rpc(ActionType.INIT,{
+		propagateActionType.rpc(ConnectionActionType.INIT,{
 			peerPlayers= peerPlayers,
 			pregeneratedSeed=  pregeneratedSeed
 		}) #list of all the players basically.
@@ -83,7 +89,7 @@ func hostStartGameInitChinesePoker():
 		print("all players are conneted, ready to start")
 		pregeneratedSeed = randi() #this thing will ALWAYS BE THE SAME throughout the game
 		propagateActionType.rpc(
-			ActionType.INIT,{
+			ConnectionActionType.INIT,{
 			peerPlayers= peerPlayers,
 			pregeneratedSeed=pregeneratedSeed
 		}) #list of all the players basically.
