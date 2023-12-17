@@ -124,23 +124,25 @@ var selfDirectionOriToScreenOri = {
 func _ready():
 	# print("reading, sohuld be called twice") #gets called twice thats good.....
 	Gamedata.propagateActionToPeers.connect(handlePropagatedAction)
-	Gamedata.propagateActionType.rpc_id(1,Gamedata.ConnectionActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED,{})
+	Gamedata.propagateActionType.rpc_id(Gamedata.HOST_ID,Gamedata.ConnectionActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED,{})
 	#stubbed data to init with 4 players
 
 	#TODO: !!!!!!!!!! REMOVE THIS WHEN MAKING MULTIPLAYER!!!!!!!!!!!!!!!!!!!!!!!
+	# initAsSinglePlayer()
 
-	# handlePropagatedInit({
-	# 		peerPlayers= {
-	# 			1:1, 
-	# 			20:22,
-	# 			3333:3333,
-	# 			4444:4444
-	# 		},
-	# 		pregeneratedSeed= randi()
-	# })	
 
 	# Gamedata.playerId = 20 this is done in the gamedata, also need to remove that stub
 
+func initAsSinglePlayer():
+	handlePropagatedInit({
+			peerPlayers= {
+				1:1, 
+				20:22,
+				3333:3333,
+				4444:4444
+			},
+			pregeneratedSeed= randi()
+	})	
 
 #
 enum BTActionType {
@@ -154,6 +156,7 @@ func handlePropagatedAction(connectionActionType, propagatedData, propagatedGame
 		handlePropagatedInit(propagatedData)
 	if(connectionActionType==Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION):
 		print("handling a propagated game action")
+		_log("handling a propagated game action of type" + enumToStr(BTActionType,propagatedGameActionType))
 		if(propagatedGameActionType==BTActionType.TURN_PLAYED):
 			handlePropagatedTurnPlayed(propagatedData)
 		if(propagatedGameActionType==BTActionType.TURN_PASSED):
@@ -169,14 +172,20 @@ func handlePropagatedTurnPlayed(propagatedData):
 	cardsLastPlayedList = cardsLastToPlayIdList.map(func(cardId): return allCards[cardId])
 	cardsLastPlayedPlayerId = propagatedData.propagatedCardsPlayedByPlayerId
 	cardsLastPlayedDirectionalOrientation = propagatedData.propagatedCardsPlayedByDirectionalOrientation
-
-
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(cardsLastPlayedDirectionalOrientation) #this is the next player turn
-
 	lerpCardsToCenter(cardsLastPlayedList,cardsLastPlayedComboType)
-
-
 	_log(getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + " played a " + getEnumStr(CardPlayedComboType,cardsLastPlayedComboType) + " ordering" + str(cardsLastPlayedComboOrdering))
+	
+	#if you played a card. those ares dont belong to you anymore
+
+	var yourCardsOnHandData = CardsOnPlayersHands[cardsLastPlayedDirectionalOrientation]
+	#remove all the cards that were played in cardslastPlayedIdList
+	for cardId in cardsLastToPlayIdList:
+		#is you are the owner of the cards, make the flag false
+		if(yourCardsOnHandData.get(cardId).isOwnedByCurrentPlayer):
+			yourCardsOnHandData.get(cardId).isOwnedByCurrentPlayer = false
+		yourCardsOnHandData.erase(cardId)
+	
 	return
 
 func handlePropagatedTurnPassed(propagatedData):
@@ -200,7 +209,7 @@ func _on_play_cards_button_pressed():
 	if(!currentTurnDirectionalOrientation == selfPlayerDirectionalOrientation):
 		print("not your turn")
 		return
-	Gamedata.propagateActionType(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
+	Gamedata.propagateActionType.rpc(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
 		propagatedCardsPlayedByPlayerId = Gamedata.playerId,
 		propagatedCardsPlayedByDirectionalOrientation = selfPlayerDirectionalOrientation,
 		propagatedCardsSelectedToPlayIdList = cardsSelectedToPlayList.map(func(card): return card.id),
@@ -216,7 +225,7 @@ func _on_pass_turn_button_pressed():
 	if(!currentTurnDirectionalOrientation == selfPlayerDirectionalOrientation):
 		print("not your turn")
 		return
-	Gamedata.propagateActionType(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
+	Gamedata.propagateActionType.rpc(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
 		propagatedCardsPlayedByPlayerId = Gamedata.playerId,
 		propagatedCardsPlayedByDirectionalOrientation = selfPlayerDirectionalOrientation,
 	}, BTActionType.TURN_PASSED)
@@ -255,7 +264,7 @@ func makeComputerPlayACard():
 				break
 
 	if(foundAPlayableCard):
-		Gamedata.propagateActionType(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
+		Gamedata.propagateActionType.rpc(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
 			propagatedCardsPlayedByPlayerId = -1000,
 			propagatedCardsPlayedByDirectionalOrientation = currentTurnDirectionalOrientation,
 			propagatedCardsSelectedToPlayIdList = computerCardsSelectedToPlayList.map(func(card): return card.id),
@@ -264,7 +273,7 @@ func makeComputerPlayACard():
 			propagatedCardsSelectedToPlayComboOrdering = computerCardsSelectedToPlayComboOrdering
 		}, BTActionType.TURN_PLAYED)
 	else:
-		Gamedata.propagateActionType(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
+		Gamedata.propagateActionType.rpc(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
 			propagatedCardsPlayedByPlayerId = -1000,
 			propagatedCardsPlayedByDirectionalOrientation = currentTurnDirectionalOrientation,
 		}, BTActionType.TURN_PASSED)
@@ -346,11 +355,9 @@ func getCardsListComboTypeAndOrdering(cardsList):
 		elif(localCardsSelectedToPlayComboType == cardsLastPlayedComboType):
 			if(localCardsSelectedToPlayComboOrdering > cardsLastPlayedComboOrdering):
 				localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = true
-		# 	else:
-		# 		localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = false
-		# else:
-		# 	localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = false
-
+		#if everyone passed, and it is now back at your own turn, you can play anything you want
+		if(currentTurnDirectionalOrientation == selfPlayerDirectionalOrientation):
+			localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = true
 	return {
 		"comboType":localCardsSelectedToPlayComboType,
 		"comboOrdering":localCardsSelectedToPlayComboOrdering,
@@ -569,20 +576,25 @@ func startGame():
 	#now this means, THE INDEX OF THE ARR IS THE CURRENT SCREEN ORIENTATION
 	# THE ELEMETNS OF THE ARR IS THE DIRECTIONAL ORIENTATION
 	# NOW THEY ARE MAPPED TO EACH OTHER! <ScreenOrientation : DirectionOrientation>
-	
+
 	for currentScreenOrientation in range(PLAYER_COUNT): #bot left top right, in that order, the game will be played like that too.
 		var currentDirectionOrientation = directionOrientationArr[currentScreenOrientation] #first one will be selfPlayerDirectionalOrientation #could be west and you are bot
 		selfDirectionOriToScreenOri[currentDirectionOrientation] = currentScreenOrientation
 
-		var playerId = allPlayerIdList[currentDirectionOrientation] #playerOrientation is interchangable with the index in the allPlayerIdList
+
+
+	for currentDirectionalOrientation in range(PLAYER_COUNT):
+
+		var playerId = allPlayerIdList[currentDirectionalOrientation] #
+		var currentScreenOrientation = selfDirectionOriToScreenOri[currentDirectionalOrientation] #first one will be selfPlayerDirectionalOrientation #could be west and you are bot
 		distributeCards({
 			temporaryCardStack = temporaryCardStack,
-			currentDirectionOrientation = currentDirectionOrientation,
-			isOwnedByCurrentPlayer = currentScreenOrientation==ScreenOrientation.BOT,
+			currentDirectionOrientation = currentDirectionalOrientation,
+			currentScreenOrientation = currentScreenOrientation,
+			isOwnedByCurrentPlayer = playerId == selfPlayerId,
 			playerId = playerId,
-			currentScreenOrientation = currentScreenOrientation
 		})
-	#selfDirectionOriToScreenOri will be used in the future to determine where teh cards was played and spawn from where
+
 func distributeCards(data):
 	var initY = 300
 	var initX = 0
@@ -620,7 +632,8 @@ func getScreenOriEnumStr(value):
 	return getEnumStr(ScreenOrientation,value)
 func getEnumStr(enums,value):
 	return enums.keys()[value]
-
+func enumToStr(enums,value):
+	return enums.keys()[value]
 
 func _log(msg):
 	print(msg)

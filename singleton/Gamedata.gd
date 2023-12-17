@@ -30,6 +30,7 @@ func _ready():
 	get_tree().change_scene_to_file(LobbyScenePath)
 	# get_tree().change_scene_to_file(ChinesePokerScenePath)
 
+
 	return
 
 @rpc("any_peer", "call_local")
