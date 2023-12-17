@@ -6,11 +6,13 @@ class_name ChinesePokerGameManager
 @onready var camera = $Camera2D
 @onready var playCardsButton = $PlayCardsButton
 @onready var playerInfoLabel = $PlayerInfo
+@onready var autoPlayToggle = $AutoPlayToggle
 
 @onready var leftAvatar = $PlayerAvatarsCollection/BtPlayerAvatarLeft
 @onready var topAvatar = $PlayerAvatarsCollection/BtPlayerAvatarTop
 @onready var rightAvatar = $PlayerAvatarsCollection/BtPlayerAvatarRight
 @onready var botAvatar = $PlayerAvatarsCollection/BtPlayerAvatarBot
+
 
 #CONST for this game
 enum DirectionOrientation {
@@ -137,7 +139,9 @@ var selfDirectionOriToScreenOri = {
 var lobbyContainsRobot = false
 var robotPositions = []
 
-var selfAutoRobotPlay = true
+var selfAutoRobotPlay = false
+
+var gameIsFinished = false
 
 func _ready():
 	# print("reading, sohuld be called twice") #gets called twice thats good.....
@@ -213,6 +217,7 @@ func handlePropagatedTurnPlayed(propagatedData):
 		_log(getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + " has won the game!")
 	if(winnersListDirectionalOrientation.size() == 4):
 		#GAME OVER!
+		gameIsFinished = true;
 		_log("GAME OVER!")
 		return
 
@@ -237,8 +242,13 @@ func checkIfHostShouldAllowRobotToPlay():
 				await get_tree().create_timer(0.2).timeout
 				_log("robot is thinking to playing a card")
 				makeComputerPlayACard()
+				return
 			else:
 				print("@@@@@@@@@@@@@@@@ robot is not playing a card, the turn is now on a PLAYER!")
+	if selfAutoRobotPlay and currentTurnDirectionalOrientation == selfPlayerDirectionalOrientation:
+		await get_tree().create_timer(0.2).timeout
+		_log("player has elected to be auto played by the robot... to playing a card")
+		makeComputerPlayACard()
 func handlePropagatedInit(propagatedData):
 	print("all players are here..")
 	print(allPlayerIdList)
@@ -266,7 +276,9 @@ func handlePropagatedInit(propagatedData):
 
 ####################### Event Handlers For Buttons On UI
 func _on_play_cards_button_pressed():
-
+	if(gameIsFinished):
+		print("game is finished")
+		return
 	if(!currentTurnDirectionalOrientation == selfPlayerDirectionalOrientation):
 		print("not your turn")
 		return
@@ -288,6 +300,9 @@ func _on_play_cards_button_pressed():
 	pass # Replace with function body.
 
 func _on_pass_turn_button_pressed():
+	if(gameIsFinished):
+		print("game is finished")
+		return
 	if(!currentTurnDirectionalOrientation == selfPlayerDirectionalOrientation):
 		print("not your turn")
 		return
@@ -309,6 +324,18 @@ func _on_button_pressed():
 	makeComputerPlayACard()
 
 
+
+func _on_auto_play_toggle_toggled(toggled_on):
+	if(gameIsFinished):
+		print("game is finished")
+		return
+		
+	# autoPlayToggle.pressed = !autoPlayToggle.pressed
+	selfAutoRobotPlay = toggled_on
+	if(toggled_on  == true):
+		_log("auto play is on")
+		checkIfHostShouldAllowRobotToPlay()
+	pass # Replace with function body.
 func makeComputerPlayACard():
 	#make a random card play
 	print("making a computer play a card")
@@ -465,6 +492,10 @@ func cycleToNextPlayerTurn(directionalOrientation):
 
 func checkIfIsAnOpenTurn():
 	#called to check if we are on a open turn
+	#also a open turn if the last player that played finished their cards
+	if(winnersListDirectionalOrientation.find(cardsLastPlayedDirectionalOrientation) != -1):
+		return true
+
 	return cardsLastPlayedDirectionalOrientation == currentTurnDirectionalOrientation
 	# if(currentTurnDirectionalOrientation == selfPlayerDirectionalOrientation and passCounter == 3):
 	# 	isOnAnOpenTurn = true
@@ -873,6 +904,12 @@ func _process(delta):
 		West: " + str(CardsOnPlayersHands[DirectionOrientation.WEST].values().map(func (card): return card.getShortRankAndSuitString())) + "
 		"
 	return
+
+
+
+
+
+
 
 
 
