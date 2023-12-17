@@ -21,7 +21,7 @@ const lerpSpeed = 12
 
 #all of the drag and drop animation stuff below
 var selected = false
-var flippedUp = true; #anything at card front z-index 6 is up, 4 is down
+var flippedUp = false; #anything at card front z-index 6 is up, 4 is down
 var restSnapPos:Vector2 = Vector2.ZERO;
 var isInDroppableArea = false
 @onready var animation = $FlipCardAnimation
@@ -118,6 +118,24 @@ func flipCard():
 		animation.play("card_flip_down")	
 		flippedUp = false
 	else:
+		animation.play("card_flip_up")	
+		flippedUp = true
+	await animation.animation_finished
+	return animation
+
+
+func flipCardDown():
+	if(animation.is_playing()):
+		await animation.animation_finished
+	if(flippedUp):
+		animation.play("card_flip_down")	
+		flippedUp = false
+	await animation.animation_finished
+	return animation
+func flipCardUp():
+	if(animation.is_playing()):
+		await animation.animation_finished
+	if(!flippedUp):
 		animation.play("card_flip_up")	
 		flippedUp = true
 	await animation.animation_finished

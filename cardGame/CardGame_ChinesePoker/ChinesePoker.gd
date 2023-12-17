@@ -366,15 +366,16 @@ func makeComputerPlayACard():
 		cardsLastPlayedComboType = CardPlayedComboType.OPEN_TURN
 		cardsLastPlayedComboOrdering = 0
 
+	var computerCardsOnHandListSorted = computerCardsOnHand.values()
+	computerCardsOnHandListSorted.sort_custom(func(cardA,cardB): return getSingleComboOrdering([cardA]) < getSingleComboOrdering([cardB]))
 	#the robot will only check the first half of the cards in the list for a playable quint set.
 	var prematureQuintBreakFlag = true 
 	var prematureQuintCheckSize = 8 #only check the first 8 cards for a quint
 	if !foundAPlayableCard and (cardsLastPlayedComboType == CardPlayedComboType.QUINT or isOnAnOpenTurn  or cardsLastPlayedComboType== CardPlayedComboType.FIRST_TO_PLAY_MUST_PLAY_THREE_OF_DIAMONDS):
 		#check for every half a quint card
-		var cardsToCheckArr = computerCardsOnHand.values()
+		var cardsToCheckArr = computerCardsOnHandListSorted
 		if(prematureQuintBreakFlag):
 			cardsToCheckArr = cardsToCheckArr.slice(0,prematureQuintCheckSize)
-			cardsToCheckArr.sort_custom(func(cardA,cardB): return getSingleComboOrdering([cardA]) > getSingleComboOrdering([cardB]))
 		for card1 in cardsToCheckArr:
 			for card2 in cardsToCheckArr:
 				if(card1.id == card2.id):
@@ -412,8 +413,8 @@ func makeComputerPlayACard():
 	if !foundAPlayableCard and (cardsLastPlayedComboType == CardPlayedComboType.DOUBLE or isOnAnOpenTurn or cardsLastPlayedComboType== CardPlayedComboType.FIRST_TO_PLAY_MUST_PLAY_THREE_OF_DIAMONDS):
 		#play a double card that is allowed to be played. else pass
 		#check for every double card.
-		for card1 in computerCardsOnHand.values():
-			for card2 in computerCardsOnHand.values():
+		for card1 in computerCardsOnHandListSorted:
+			for card2 in computerCardsOnHandListSorted:
 				if(card1.id == card2.id):
 					continue
 				var cardsSelectedToPlayList = [card1,card2]
@@ -432,7 +433,7 @@ func makeComputerPlayACard():
 		#play a single card that is allowed to be played. else pass
 		#check for every single card.
 		#break out of the if statement if you found a playable card
-		for card in computerCardsOnHand.values():
+		for card in computerCardsOnHandListSorted:
 			var cardsSelectedToPlayList = [card]
 			var cardsSelectedComboAndOrderingData = getCardsListComboTypeAndOrdering(cardsSelectedToPlayList)
 			foundAPlayableCard = cardsSelectedComboAndOrderingData.comboCanBePlayedFlag
@@ -720,11 +721,13 @@ func getQuintComboOrdering(cardsList):
 
 var numCardsZIndexCounter = 3
 func lerpCardsToCenter(cardsList,cardComboType):
+	#flip cards up
 	if(cardComboType == CardPlayedComboType.SINGLE):
 		var card = cardsList[0]
 		card.restSnapPos = PLAYED_CARDS_SNAP_POSITION
 		card.z_index = numCardsZIndexCounter
 		numCardsZIndexCounter+=1
+		card.flipCardUp()
 		return
 	elif(cardComboType == CardPlayedComboType.DOUBLE):
 		var card1 = cardsList[0]
@@ -734,6 +737,8 @@ func lerpCardsToCenter(cardsList,cardComboType):
 		card1.z_index = numCardsZIndexCounter
 		card2.z_index = numCardsZIndexCounter
 		numCardsZIndexCounter += 1
+		card1.flipCardUp()
+		card2.flipCardUp()
 		return
 	elif(cardComboType == CardPlayedComboType.QUINT):
 		var card1 = cardsList[0]
@@ -752,6 +757,11 @@ func lerpCardsToCenter(cardsList,cardComboType):
 		card4.z_index = numCardsZIndexCounter
 		card5.z_index = numCardsZIndexCounter
 		numCardsZIndexCounter +=1
+		card1.flipCardUp()
+		card2.flipCardUp()
+		card3.flipCardUp()
+		card4.flipCardUp()
+		card5.flipCardUp()
 		return
 	else:
 		print("error, card combo type not found")
@@ -793,8 +803,8 @@ func startGame():
 	# ranks.shuffle()
 	var temporaryCardStack = [] 
 	var countsId = 1
-	for suit in suits:
-		for rank in ranks:
+	for rank in ranks:
+		for suit in suits:
 			var card = createBTCard()
 			card.initBTCardType(suit,rank,countsId)
 			allCards[countsId] = card
@@ -869,8 +879,11 @@ func distributeCards(data):
 		CardsOnPlayersHands[data.currentDirectionOrientation][card.id] = card
 		if(!data.isOwnedByCurrentPlayer):
 			card.restSnapPos = posAvatarSnapPos
+			card.flipCardDown()
+
 		else: #you do own the card so lets put it on the bottom!!!
 			card.restSnapPos = Vector2(initX+distance*counter+offSetX,initY)
+			card.flipCardUp()
 		counter+=1  
 
 	
