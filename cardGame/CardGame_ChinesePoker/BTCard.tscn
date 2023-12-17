@@ -1,11 +1,11 @@
 [gd_scene load_steps=9 format=3 uid="uid://c2vebsq2inor5"]
 
 [ext_resource type="Script" path="res://cardGame/CardGame_ChinesePoker/BTCard.gd" id="1_7ry17"]
-[ext_resource type="Texture2D" uid="uid://bccrv78cs3m7n" path="res://asset/Cards (large)/card_clubs_02.png" id="2_whd6u"]
-[ext_resource type="Texture2D" uid="uid://bfgtb3aux1u6r" path="res://asset/Cards (large)/card_back.png" id="3_cc5n5"]
+[ext_resource type="Texture2D" uid="uid://bsl2y1yeya6ps" path="res://asset/CardsLetterNumsTogether/cardSpadesQ.png" id="2_ktyma"]
+[ext_resource type="Texture2D" uid="uid://djq2jjfhy0tw" path="res://asset/CardsLetterNumsTogether/cardBack_blue4.png" id="3_cxmq6"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nh3xx"]
-size = Vector2(40, 58)
+size = Vector2(138, 186)
 
 [sub_resource type="Animation" id="Animation_wgk4e"]
 length = 0.001
@@ -147,7 +147,7 @@ _data = {
 
 [node name="BTCards" type="Area2D"]
 position = Vector2(80, 56)
-scale = Vector2(3, 3)
+scale = Vector2(1.5, 1.5)
 script = ExtResource("1_7ry17")
 
 [node name="Label" type="Label" parent="."]
@@ -160,14 +160,14 @@ text = "card data here"
 
 [node name="CardFront" type="Sprite2D" parent="."]
 z_index = 4
-texture = ExtResource("2_whd6u")
+texture = ExtResource("2_ktyma")
 
 [node name="CardBack" type="Sprite2D" parent="."]
 z_index = 5
-texture = ExtResource("3_cc5n5")
+texture = ExtResource("3_cxmq6")
 
 [node name="CardCollision" type="CollisionShape2D" parent="."]
-position = Vector2(0, -1)
+position = Vector2(-0.333336, 0.333332)
 shape = SubResource("RectangleShape2D_nh3xx")
 
 [node name="FlipCardAnimation" type="AnimationPlayer" parent="."]
@@ -175,4 +175,14 @@ libraries = {
 "": SubResource("AnimationLibrary_5nha3")
 }
 
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -70.0
+offset_top = -94.6667
+offset_right = -30.0
+offset_bottom = -54.6667
+scale = Vector2(3.49846, 4.71498)
+
 [connection signal="input_event" from="." to="." method="_on_input_event"]
+[connection signal="gui_input" from="Control" to="." method="_on_control_gui_input"]

@@ -243,6 +243,9 @@ func handlePropagatedTurnPlayed(propagatedData):
 	#check for the robot to play a card if required... ;(
 	checkIfHostShouldAllowRobotToPlay()
 	enablePassButtonOnYourTurn()
+	#for yourself is you were the last player that played, you need to reorganize your cards
+	if(cardsLastPlayedDirectionalOrientation == selfPlayerDirectionalOrientation):
+		handleReorganizingCardsOnHand(false)
 func handlePropagatedTurnPassed(propagatedData):
 
 	_log(getDirectionOriEnumStr(propagatedData.propagatedCardsPlayedByDirectionalOrientation)+ " passed")
@@ -289,7 +292,6 @@ func handlePropagatedInit(propagatedData):
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(currentTurnDirectionalOrientation) #this is the next player turn
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(currentTurnDirectionalOrientation) #this is the next player turn
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(currentTurnDirectionalOrientation) #this is the next player turn
-	handleSortSelfCardsOnHand()
 	restartButton.disabled = false
 ####################### Event Handlers For Buttons On UI
 
@@ -317,7 +319,7 @@ func _on_play_cards_button_pressed():
 		propagatedCardsSelectedToPlayComboOrdering = cardsSelectedToPlayComboOrdering,
 		propagatedLASTLASTCardsPlayedIdList = cardsLastPlayedList.map(func(card): return card.id),
 	}, BTActionType.TURN_PLAYED)
-	lerpCardsToCenter(cardsSelectedToPlayList,cardsSelectedToPlayComboType)
+	# lerpCardsToCenter(cardsSelectedToPlayList,cardsSelectedToPlayComboType)
 
 	#clear all the cards that were selected to be played!
 	cardsSelectedToPlayList = []
@@ -367,7 +369,7 @@ func _on_auto_play_toggle_toggled(toggled_on):
 
 
 func _on_sort_cards_pressed():
-	handleSortSelfCardsOnHand()
+	handleReorganizingCardsOnHand(true)
 
 
 func makeComputerPlayACard():
@@ -470,7 +472,6 @@ func makeComputerPlayACard():
 
 	if(foundAPlayableCard):
 		print("THE ROBOT DECIDE TO PLAY: ",computerCardsSelectedToPlayList.map(func(card): return card.getShortRankAndSuitString()))
-
 		Gamedata.propagateActionType.rpc(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
 			propagatedCardsPlayedByPlayerId = -1000,
 			propagatedCardsPlayedByDirectionalOrientation = currentTurnDirectionalOrientation,
@@ -900,11 +901,11 @@ func startGame():
 		})
 
 func distributeCards(data):
-	var initY = 300
-	var initX = 0
-	var offSetX = -600
-	var distance = 1280/13
-	var counter = 0
+	# var initY = 300
+	# var initX = 0
+	# var offSetX = -600
+	# var distance = 1280/13
+	# var counter = 0
 	var posAvatarSnapPos = screenOriToPlayerAvatar[data.currentScreenOrientation].get_node("CardSnapPos").global_position
 
 	for i in range(NUM_CARDS_PER_PLAYER):
@@ -920,38 +921,45 @@ func distributeCards(data):
 			card.flipCardDown()
 
 		else: #you do own the card so lets put it on the bottom!!!
-			card.setCardRestSnapPos(Vector2(initX+distance*counter+offSetX,initY))
+			# card.setCardRestSnapPos(Vector2(initX+distance*counter+offSetX,initY))
 			# card.restSnapPos = Vector2(initX+distance*counter+offSetX,initY)
 			card.flipCardUp()
-		counter+=1  
+		# counter+=1  
+	handleReorganizingCardsOnHand(true)
 	handleCardSFX(CardAction.DISTRIBUTED)
 ####################### making things look pretty ANIMATION FUNCTIONS
+
+
+
+
 var isSortedAscending = false
-func handleSortSelfCardsOnHand():
-	
-	var cardsOnHand = CardsOnPlayersHands[selfPlayerDirectionalOrientation]
-	var cardsOnHandArr = cardsOnHand.values()
+
+func handleReorganizingCardsOnHand(sortingButtonClickToToggleSortOrder=false): #if you are not sorting, you are then only just reorganizing the cards thats all, then you just sort as what isSortedAscending is
+	var cardsOnHandArr = CardsOnPlayersHands[selfPlayerDirectionalOrientation].values()
 	if(cardsOnHandArr.size() == 0):
 		return	
 
-	if(isSortedAscending):
-		cardsOnHandArr.sort_custom(func(cardA,cardB): return getSingleComboOrdering([cardA]) > getSingleComboOrdering([cardB]))
-		isSortedAscending = false
-	else:
-		cardsOnHandArr.sort_custom(func(cardA,cardB): return getSingleComboOrdering([cardA]) < getSingleComboOrdering([cardB]))
-		isSortedAscending = true;
-
-
-	print("sorted cards on hand",cardsOnHandArr.map(func(card): return card.getShortRankAndSuitString()))
-	var initY = 300
-	var initX = 0
-	var offSetX = -600
-	var distance = 1280/13
-	var counter = 0
-
+	if (sortingButtonClickToToggleSortOrder):
+		isSortedAscending = !isSortedAscending
+	cardsOnHandArr.sort_custom(func(cardA, cardB): return ( getSingleComboOrdering([cardA]) < getSingleComboOrdering([cardB]) if isSortedAscending else getSingleComboOrdering([cardA]) > getSingleComboOrdering([cardB])))
+	
 	handleCardSFX(CardAction.SORTED)
+	print("sorted cards on hand",cardsOnHandArr.map(func(card): return card.getShortRankAndSuitString()))
+	resetCardsOnHandDefaultPosition(cardsOnHandArr)
+
+func resetCardsOnHandDefaultPosition(cardsOnHandArr):
+	var initY = 300
+	var counter = 0
+	var distance = 1280/13
+
+	var numCards = cardsOnHandArr.size()
+
+	var leftBound = -distance * (numCards-1) / 2
+	# var rightBound = -distance * (numCards-1) / 2 
+	# var zIndexCounter = 0 #starting from idk from 0 to 13
 	for card in cardsOnHandArr:
-		card.setCardRestSnapPos(Vector2(initX+distance*counter+offSetX,initY))
+		card.setCardRestSnapPos(Vector2(distance*counter+leftBound,initY))
+		card.z_index = counter
 		counter+=1
 
 @onready var cardSlide_SFX = 	$SoundSFX/cardSlideSFX

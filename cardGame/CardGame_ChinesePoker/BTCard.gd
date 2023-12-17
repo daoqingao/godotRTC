@@ -52,8 +52,17 @@ func initBTCardType(suit,rank,id): #this like shuffling the deck physically
 	self.suit = suit
 	self.rank = rank
 	self.id = id
+
+	var useCardsWithNumbersTogether = true
 	var cardNum =  "0"+rank if 	rank.is_valid_int() && rank.length() < 2 else rank
 	var cardImgPathStr = ("res://asset/Cards (large)/" +"card_" + self.suit + "_" + cardNum + ".png")
+
+
+	if(useCardsWithNumbersTogether):
+		#making the first letter of the card suit str uppercase
+		var cardSuitFirstLetterUpper= self.suit[0].to_upper() + self.suit.substr(1,self.suit.length())
+		cardImgPathStr = ("res://asset//CardsLetterNumsTogether/" +"card" + cardSuitFirstLetterUpper + rank + ".png")
+		print(cardImgPathStr)
 	# print(cardImgPathStr)
 	var cardImgTexture = load(cardImgPathStr)
 	$CardFront.texture = cardImgTexture
@@ -180,3 +189,10 @@ func _on_input_event(viewport, event, shape_idx):
 
 signal isPlayedSignal(vars)
 signal isSelectedSignal(card)
+
+
+func _on_control_gui_input(event):
+	if(event.is_action_pressed("leftClick")):
+		isSelectedSignal.emit(self)
+		print("got clicked")
+	pass # Replace with function body.
