@@ -147,7 +147,7 @@ _data = {
 
 [node name="BTCards" type="Area2D"]
 position = Vector2(80, 56)
-scale = Vector2(2, 2)
+scale = Vector2(3, 3)
 script = ExtResource("1_7ry17")
 
 [node name="Label" type="Label" parent="."]

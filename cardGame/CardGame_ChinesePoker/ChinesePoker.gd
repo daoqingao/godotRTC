@@ -189,6 +189,15 @@ func handlePropagatedAction(connectionActionType, propagatedData, propagatedGame
 
 
 func handlePropagatedTurnPlayed(propagatedData):
+
+	var lastAnimation = null
+	for card in propagatedData.propagatedLASTLASTCardsPlayedIdList.map(func(cardId): return allCards[cardId]):
+		# card.restSnapPos = PLAYED_CARDS_SNAP_POSITION
+		lastAnimation = card.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION+Vector2(-200,0)).finished
+		card.flipCardDown()
+	if(lastAnimation != null):
+		# handleCardSFX(CardAction.DISCARDED)
+		await lastAnimation
 	# checkIfIsAnOpenTurn()
 	var cardsLastToPlayIdList = propagatedData.propagatedCardsSelectedToPlayIdList
 	cardsLastPlayedComboType = propagatedData.propagatedCardsSelectedToPlayComboType
@@ -227,10 +236,7 @@ func handlePropagatedTurnPlayed(propagatedData):
 
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(cardsLastPlayedDirectionalOrientation) #this is the next player turn
 	# clear the previous board 
-	for card in propagatedData.propagatedLASTLASTCardsPlayedIdList.map(func(cardId): return allCards[cardId]):
-		# card.restSnapPos = PLAYED_CARDS_SNAP_POSITION
-		card.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION)
-		handleCardSFX(CardAction.DISCARDED)
+
 
 
 

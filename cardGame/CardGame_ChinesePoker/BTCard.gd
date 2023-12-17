@@ -82,10 +82,14 @@ func _process(delta):
 
 
 func setCardRestSnapPos(pos,reason=-1):
-	get_tree().create_tween().tween_property(self,
+	var tween = get_tree().create_tween()
+	tween.tween_property(self,
 	"position",
 	pos,.25).set_trans(4)
 	restSnapPos = pos
+	
+	return 	tween.tween_interval(.25)
+
 	#use tween to move the card to the restSnapPos
 
 
