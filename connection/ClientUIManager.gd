@@ -37,7 +37,8 @@ func propagateDataFromHost(data,gameType):
 	Gamedata.peerPlayers = data
 	Gamedata.playerId = multiplayer.get_unique_id()
 	Gamedata.startGame(gameType)
-	_log("requested to start a game with"+str(finalizedPeerPlayers))
+	_log("[Propagated from host, all peers get this] 
+	Everyone should now receive a game start to start a game with peers "+str(data))
 
 
 
@@ -83,4 +84,6 @@ func _on_stop_pressed():
 
 func _on_chinese_poker_pressed():
 	handleSealLobby()
+	print("[HOST] has been sealed, and is now trying to propagate")
+	print("[HOST] finalizedPeerPlayers: "+str(finalizedPeerPlayers))
 	propagateDataFromHost.rpc(finalizedPeerPlayers,Gamedata.GameType.CHINESE_POKER)

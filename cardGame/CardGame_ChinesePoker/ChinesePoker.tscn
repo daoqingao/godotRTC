@@ -73,8 +73,6 @@ offset_left = -627.0
 offset_top = -296.0
 offset_right = -407.0
 offset_bottom = -251.0
-text = "You are player:  North (Bottom)
-Cards on Hand:"
 
 [node name="OtherPlayerCardsPlayedInfo" type="Label" parent="."]
 offset_left = 200.0

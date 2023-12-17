@@ -18,12 +18,6 @@ var lobbiesCreated = 0
 func _ready():
 	#we can just make the server always start. it really doesnt matter, all matters is where you connect to
 	self.listen(devSignalingPort)
-	#if (OS.get_name()=="Android"):
-		#return #dont start a server if you are on android.
-	#if  "--server" in OS.get_cmdline_args():
-		#self.listen(devSignalingPort)
-	#else: #this is onyl for debug reasons
-		#self.listen(devSignalingPort)	
 class Peer extends RefCounted:
 	var id = -1
 	var lobby = ""

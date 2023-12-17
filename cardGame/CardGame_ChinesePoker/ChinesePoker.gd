@@ -5,6 +5,7 @@ class_name ChinesePokerGameManager
 @onready var BTCard = preload("res://cardGame/CardGame_ChinesePoker/BTCard.tscn")
 @onready var camera = $Camera2D
 @onready var playCardsButton = $PlayCardsButton
+@onready var playerInfoLabel = $PlayerInfo
 #CONST for this game
 enum DirectionOrientation {
 	SOUTH,WEST,NORTH,EAST
@@ -125,15 +126,19 @@ func _ready():
 	Gamedata.propagateActionToPeers.connect(handlePropagatedAction)
 	Gamedata.propagateActionType.rpc_id(1,Gamedata.ConnectionActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED,{})
 	#stubbed data to init with 4 players
-	handlePropagatedInit({
-			peerPlayers= {
-				1:1, 
-				20:22,
-				3333:3333,
-				4444:4444
-			},
-			pregeneratedSeed= randi()
-	})	
+
+	#TODO: !!!!!!!!!! REMOVE THIS WHEN MAKING MULTIPLAYER!!!!!!!!!!!!!!!!!!!!!!!
+
+	# handlePropagatedInit({
+	# 		peerPlayers= {
+	# 			1:1, 
+	# 			20:22,
+	# 			3333:3333,
+	# 			4444:4444
+	# 		},
+	# 		pregeneratedSeed= randi()
+	# })	
+
 	# Gamedata.playerId = 20 this is done in the gamedata, also need to remove that stub
 
 
@@ -538,14 +543,18 @@ func startGame():
 			allCards[countsId] = card
 			temporaryCardStack.push_back(card)
 			countsId +=1
-	temporaryCardStack.shuffle()
+	# temporaryCardStack.shuffle()
+	#the first guy will always have diamond three, whoever is the host will get d3 if no shuffle
 	print("started game #pretend we are drawing cards here")
 	#assigning screen positions and orientations
+
+	#playeridlistidx is the same listing always.
 	for playerIdListIdx in range(PLAYER_COUNT):
 		var playerId = allPlayerIdList[playerIdListIdx] 
-		var orientation = playerIdListIdx
+		var dirOri = playerIdListIdx
 		if selfPlayerId == playerId:
-			selfPlayerDirectionalOrientation = orientation #which one is you...
+			selfPlayerDirectionalOrientation = dirOri #which one is you...
+			#if you are first, you are assigned SOUTH, second is WEST, third is NORTH, fourth is EAST
 
 	var directionOrientationArr = [
 		DirectionOrientation.SOUTH,
@@ -556,9 +565,11 @@ func startGame():
 	var firstHalf = directionOrientationArr.slice(0, selfPlayerDirectionalOrientation)
 	var secondHalf = directionOrientationArr.slice(selfPlayerDirectionalOrientation, directionOrientationArr.size())
 	directionOrientationArr =  secondHalf + firstHalf
+
 	#now this means, THE INDEX OF THE ARR IS THE CURRENT SCREEN ORIENTATION
 	# THE ELEMETNS OF THE ARR IS THE DIRECTIONAL ORIENTATION
-	# NOW THEY ARE MAPPED TO EACH OTHER!
+	# NOW THEY ARE MAPPED TO EACH OTHER! <ScreenOrientation : DirectionOrientation>
+	
 	for currentScreenOrientation in range(PLAYER_COUNT): #bot left top right, in that order, the game will be played like that too.
 		var currentDirectionOrientation = directionOrientationArr[currentScreenOrientation] #first one will be selfPlayerDirectionalOrientation #could be west and you are bot
 		selfDirectionOriToScreenOri[currentDirectionOrientation] = currentScreenOrientation
@@ -588,7 +599,17 @@ func distributeCards(data):
 			card.restSnapPos = Vector2(initX+distance*counter+offSetX,initY)
 		counter+=1  
 
-
+	playerInfoLabel.text = "
+	You are player: " + str(selfPlayerId) + "
+	Your directional orientation is: " + getDirectionOriEnumStr(selfPlayerDirectionalOrientation) + "
+	Your # of card on hand is: " + str(CardsOnPlayersHands[selfPlayerDirectionalOrientation].size()) + "
+	You have selected to Play: " + str(cardsSelectedToPlayList.size()) + " cards
+	Your combo is: " + getEnumStr(CardPlayedComboType,cardsSelectedToPlayComboType) + "
+	Your quint combo is: " + getEnumStr(QuintComboType,cardsSelectedToPlayQuintComboType) + "
+	Your combo ordering is: " + str(cardsSelectedToPlayComboOrdering) + "
+	Current turn is: " + getDirectionOriEnumStr(currentTurnDirectionalOrientation) + "
+	Last Player Played Directional Orientation is: " + getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + "
+	"
 	
 
 
@@ -606,24 +627,24 @@ func _log(msg):
 	$DebugLog.text += str(msg) + "\n"
 
 func _process(delta):
-	$PlayerInfo.text = "
-	You are player: " + str(selfPlayerId) + "
-	Your directional orientation is: " + getDirectionOriEnumStr(selfPlayerDirectionalOrientation) + "
-	Your # of card on hand is: " + str(CardsOnPlayersHands[selfPlayerDirectionalOrientation].size()) + "
-	You have selected to Play: " + str(cardsSelectedToPlayList.size()) + " cards
-	Your combo is: " + getEnumStr(CardPlayedComboType,cardsSelectedToPlayComboType) + "
-	Your quint combo is: " + getEnumStr(QuintComboType,cardsSelectedToPlayQuintComboType) + "
-	Your combo ordering is: " + str(cardsSelectedToPlayComboOrdering) + "
-	Current turn is: " + getDirectionOriEnumStr(currentTurnDirectionalOrientation) + "
-	Last Player Played Directional Orientation is: " + getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + "
-	"
-
-	$OtherPlayerCardsPlayedInfo.text = "
-	Last played combo is: " + getEnumStr(CardPlayedComboType,cardsLastPlayedComboType) + "
-	Last played quint combo is: " + getEnumStr(QuintComboType,cardsLastPlayedQuintComboType) + "
-	Last played combo ordering is: " + str(cardsLastPlayedComboOrdering) + "
-	Last played by player id: " + str(cardsLastPlayedPlayerId) + "
-	Last played by directional orientation: " + getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + "
-	"
+	# playerInfoLabel.text = "
+	# You are player: " + str(selfPlayerId) + "
+	# Your directional orientation is: " + getDirectionOriEnumStr(selfPlayerDirectionalOrientation) + "
+	# Your # of card on hand is: " + str(CardsOnPlayersHands[selfPlayerDirectionalOrientation].size()) + "
+	# You have selected to Play: " + str(cardsSelectedToPlayList.size()) + " cards
+	# Your combo is: " + getEnumStr(CardPlayedComboType,cardsSelectedToPlayComboType) + "
+	# Your quint combo is: " + getEnumStr(QuintComboType,cardsSelectedToPlayQuintComboType) + "
+	# Your combo ordering is: " + str(cardsSelectedToPlayComboOrdering) + "
+	# Current turn is: " + getDirectionOriEnumStr(currentTurnDirectionalOrientation) + "
+	# Last Player Played Directional Orientation is: " + getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + "
+	# "
+	return
+# 	$OtherPlayerCardsPlayedInfo.text = "
+# 	Last played combo is: " + getEnumStr(CardPlayedComboType,cardsLastPlayedComboType) + "
+# 	Last played quint combo is: " + getEnumStr(QuintComboType,cardsLastPlayedQuintComboType) + "
+# 	Last played combo ordering is: " + str(cardsLastPlayedComboOrdering) + "
+# 	Last played by player id: " + str(cardsLastPlayedPlayerId) + "
+# 	Last played by directional orientation: " + getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + "
+# 	"
 
 

@@ -10,7 +10,7 @@ const HOST_ID = 1;
 enum ConnectionActionType {
 	PLAYER_SIGNAL_CONNECTED_AND_READIED,
 	INIT,
-	# CARD_PLAYED,
+	CARD_PLAYED,
 	RESTART,
 	PROPAGATE_GAME_ACTION,
 }
@@ -27,8 +27,8 @@ var playersSignalConnectedAndReadiedCount = -1
 
 
 func _ready():
-	# get_tree().change_scene_to_file(LobbyScenePath)
-	get_tree().change_scene_to_file(ChinesePokerScenePath)
+	get_tree().change_scene_to_file(LobbyScenePath)
+	# get_tree().change_scene_to_file(ChinesePokerScenePath)
 
 	return
 
@@ -74,10 +74,11 @@ func hostStartGameInitRPSData():
 
 func hostStartGameInitChinesePoker():
 	var playerSize = peerPlayers.size()
-	var requiredPlayers = 2 #TODO: is at 2 but should be 4
+	var requiredPlayers = 4 #TODO: is at 2 but should be 4
 	playersSignalConnectedAndReadiedCount = 0
 	if(playerSize != requiredPlayers):
 		printerr("chinese poker requires 4 players")
+		print("unable to start chinese poker because it requires 4 players.")
 		return
 
 	print("starting chinese poker")
