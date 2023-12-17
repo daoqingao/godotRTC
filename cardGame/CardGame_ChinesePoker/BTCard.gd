@@ -17,6 +17,8 @@ func getEnumStr(enums,value):
 
 
 
+const lerpSpeed = 12
+
 #all of the drag and drop animation stuff below
 var selected = false
 var flippedUp = true; #anything at card front z-index 6 is up, 4 is down
@@ -62,7 +64,7 @@ func _physics_process(delta):
 	# 	position = lerp(position,get_global_mouse_position(),25 * delta)
 	# 	restSnapPos = position
 	# else:
-	position = lerp(position,restSnapPos,25 * delta)
+	position = lerp(position,restSnapPos,lerpSpeed * delta)
 func _ready():
 	pass 
 
@@ -83,11 +85,25 @@ func _to_string():
 		directionOrientation,
 	]
 
+func getShortRankAndSuitString():
+	return "%s%s" % [
+		rank,
+		getEmojiSuitString(),
+	]
 
 
 
-
-
+func getEmojiSuitString():
+	if(suit == "spades"):
+		return "♠"
+	elif(suit == "hearts"):
+		return "♥"
+	elif(suit == "diamonds"):
+		return "♦"
+	elif(suit == "clubs"):
+		return "♣"
+	else:
+		return "?"
 
 
 

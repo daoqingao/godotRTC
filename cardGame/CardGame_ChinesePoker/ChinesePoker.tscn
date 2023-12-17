@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://bxuthfgtaurup"]
+[gd_scene load_steps=4 format=3 uid="uid://bxuthfgtaurup"]
 
 [ext_resource type="Script" path="res://cardGame/CardGame_ChinesePoker/ChinesePoker.gd" id="1_vvo47"]
+[ext_resource type="PackedScene" uid="uid://uyybxckd7n4u" path="res://cardGame/CardGame_ChinesePoker/BTPlayerAvatar.tscn" id="2_5u8i0"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_67l80"]
 size = Vector2(40, 40)
@@ -44,7 +45,7 @@ position = Vector2(19.9426, 19.8174)
 [node name="MockAnotherPlayPlayedACard" type="Button" parent="AllTestRelatedFunctionalities"]
 offset_right = 8.0
 offset_bottom = 8.0
-text = "Mock another player played a card"
+text = "Make Computer Play"
 
 [node name="PlayCardsButton" type="Button" parent="."]
 offset_left = 200.0
@@ -59,6 +60,7 @@ offset_left = -627.0
 offset_top = 29.0
 offset_right = -516.0
 offset_bottom = 50.0
+scale = Vector2(0.75, 0.75)
 
 [node name="PassTurnButton" type="Button" parent="."]
 offset_left = 121.0
@@ -70,17 +72,39 @@ text = "Pass
 
 [node name="PlayerInfo" type="Label" parent="."]
 offset_left = -627.0
-offset_top = -296.0
-offset_right = -407.0
-offset_bottom = -251.0
+offset_top = -360.0
+offset_right = 197.0
+offset_bottom = -3.0
+scale = Vector2(0.686, 0.75)
+text = "		You are player: \" + str(selfPlayerId) + \"
+		Your directional orientation is: \" + getDirectionOriEnumStr(selfPlayerDirectionalOrientation) + \"
+		Your # of card on hand is: \" + str(CardsOnPlayersHands[selfPlayerDirectionalOrientation].size()) + \"
+		You have selected to Play: \" + str(cardsSelectedToPlayList.size()) + \" cards
+		Your combo is: \" + getEnumStr(CardPlayedComboType,cardsSelectedToPlayComboType) + \"
+		Your quint combo is: \" + getEnumStr(QuintComboType,cardsSelectedToPlayQuintComboType) + \"
+		Your combo ordering is: \" + str(cardsSelectedToPlayComboOrdering) + \"
+		Current turn is: \" + getDirectionOriEnumStr(currentTurnDirectionalOrientation) + \"
+		Last Player Played Directional Orientation is: \" + getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + \"
+		Last played combo is: \" + getEnumStr(CardPlayedComboType,cardsLastPlayedComboType) + \"
+		Last played quint combo is: \" + getEnumStr(QuintComboType,cardsLastPlayedQuintComboType) + \"
+		Last played combo ordering is: \" + str(cardsLastPlayedComboOrdering) + \"
+		Last played by player id: \" + str(cardsLastPlayedPlayerId) + \"
+		Last played by directional orientation: \" + getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + \"
+		Is on open turn: \" + str(isOnAnOpenTurn) + \""
 
-[node name="OtherPlayerCardsPlayedInfo" type="Label" parent="."]
-offset_left = 200.0
-offset_top = -296.0
-offset_right = 420.0
-offset_bottom = -251.0
-text = "You are player:  North (Bottom)
-Cards on Hand:"
+[node name="PlayerAvatarsCollection" type="Node2D" parent="."]
+
+[node name="BtPlayerAvatarBot" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
+position = Vector2(-26, 127)
+
+[node name="BtPlayerAvatarLeft" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
+position = Vector2(-322, -155)
+
+[node name="BtPlayerAvatarTop" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
+position = Vector2(569, -220)
+
+[node name="BtPlayerAvatarRight" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
+position = Vector2(569, 84)
 
 [connection signal="area_entered" from="DropArea" to="." method="_on_drop_area_area_entered"]
 [connection signal="area_exited" from="DropArea" to="." method="_on_drop_area_area_exited"]
