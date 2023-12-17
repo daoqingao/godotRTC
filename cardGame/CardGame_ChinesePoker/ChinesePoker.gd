@@ -130,9 +130,9 @@ var selfDirectionOriToScreenOri = {
 	ScreenOrientation.RIGHT:rightAvatar,
 }
 
-# var selfCardsOnHand = {}
-# var selfCardsPosArrX = []
-# var ownCards = CardsOnPlayersHands[selfPlayerDirectionalOrientation]
+
+var lobbyContainsRobot = false
+var robotPositions = []
 
 func _ready():
 	# print("reading, sohuld be called twice") #gets called twice thats good.....
@@ -141,7 +141,7 @@ func _ready():
 	#stubbed data to init with 4 players
 
 	#TODO: !!!!!!!!!! REMOVE THIS WHEN MAKING MULTIPLAYER!!!!!!!!!!!!!!!!!!!!!!!
-	initAsSinglePlayer()
+	# initAsSinglePlayer()
 
 
 	# Gamedata.playerId = 20 this is done in the gamedata, also need to remove that stub
@@ -150,9 +150,9 @@ func initAsSinglePlayer():
 	handlePropagatedInit({
 			peerPlayers= {
 				1:1, 
-				20:22,
-				3333:3333,
-				4444:4444
+				-20:22,
+				-3333:3333,
+				-4444:4444
 			},
 			pregeneratedSeed= randi()
 	})	
@@ -201,26 +201,45 @@ func handlePropagatedTurnPlayed(propagatedData):
 		yourCardsOnHandData.erase(cardId)
 	
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(cardsLastPlayedDirectionalOrientation) #this is the next player turn
-	
 	# clear the previous board 
 	for card in propagatedData.propagatedLASTLASTCardsPlayedIdList.map(func(cardId): return allCards[cardId]):
 		card.restSnapPos = PLAYED_CARDS_SNAP_POSITION
+
+	#check for the robot to play a card if required... ;(
+	checkIfHostShouldAllowRobotToPlay()
 
 func handlePropagatedTurnPassed(propagatedData):
 
 	_log(getDirectionOriEnumStr(propagatedData.propagatedCardsPlayedByDirectionalOrientation)+ " passed")
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(propagatedData.propagatedCardsPlayedByDirectionalOrientation) #this is the next player turn
-	return
+	checkIfHostShouldAllowRobotToPlay()
 
+func checkIfHostShouldAllowRobotToPlay():
+	if(selfPlayerId == Gamedata.HOST_ID):
+		if(lobbyContainsRobot):
+			if(robotPositions.find(currentTurnDirectionalOrientation) != -1):
+				await get_tree().create_timer(0.50).timeout
+				_log("robot is thinking to playing a card")
+				makeComputerPlayACard()
+			else:
+				print("@@@@@@@@@@@@@@@@ robot is not playing a card, the turn is now on a PLAYER!")
 func handlePropagatedInit(propagatedData):
+	print("all players are here..")
+	print(allPlayerIdList)
 	allPlayerIdList = propagatedData.peerPlayers.keys()
 	allPlayerIdList.sort() #make sure the things are consistent, because the index you are in determines the orientation
+	#if any of the playerid are negative, that means it is a robot
+	if(allPlayerIdList.find(func(playerId): return playerId < 0) != null):
+		print('has a lobby with a robot')
+		lobbyContainsRobot = true
+
+
 	#0 is SOUTH, 1 is WEST, 2 IS NORTH, 3 IS EAST, (EXACTLY LIKE THE ENUM)
 	selfPlayerId = Gamedata.playerId
 	seed(propagatedData.pregeneratedSeed)
 	startGame()
 	doneInitialized = true
-
+	checkIfHostShouldAllowRobotToPlay()
 ####################### Event Handlers For Buttons On UI
 func _on_play_cards_button_pressed():
 
@@ -258,6 +277,11 @@ func _on_pass_turn_button_pressed():
 
 func _on_button_pressed():
 	#a bot plays a card randomly
+
+	#auto play for yourself only....
+	if(!currentTurnDirectionalOrientation == selfPlayerDirectionalOrientation):
+		print("not your turn")
+		return
 	makeComputerPlayACard()
 
 
@@ -392,8 +416,15 @@ func cycleToNextPlayerTurn(directionalOrientation):
 	lastTurnAvatar.text += " " + str(CardsOnPlayersHands[previousDirectionalOri].size())
 	currentTurnAvatar.text += " " + str(CardsOnPlayersHands[nextPlayerTurn].size())
 
+	#check if the current turn is a robot, if so, append text saying its a robot:
+	if(robotPositions.find(nextPlayerTurn) != -1):
+		currentTurnAvatar.text += "[BOT]"
+	if(robotPositions.find(previousDirectionalOri) != -1):
+		lastTurnAvatar.text += "[BOT]"
+
 	if(cardsLastPlayedDirectionalOrientation == nextPlayerTurn):
 		currentTurnAvatar.text += " OPEN TURN! " 
+	
 
 	lastTurnAvatar.modulate = Color(1,1,1,1)
 	currentTurnAvatar.modulate = Color(1,1,0.5,0.5)
@@ -467,7 +498,7 @@ func getCardsListComboTypeAndOrdering(cardsList):
 
 	#they need to be the same combo type, and the ranking needs to be greater
 
-	print("comparing the ordering right now, previous ordering is",cardsLastPlayedComboOrdering,"current ordering is",localCardsSelectedToPlayComboOrdering)
+	# print("comparing the ordering right now, previous ordering is",cardsLastPlayedComboOrdering,"current ordering is",localCardsSelectedToPlayComboOrdering)
 	if(localCardsSelectedToPlayComboType != CardPlayedComboType.INVALID_COMBO):
 		if(cardsLastPlayedComboType == CardPlayedComboType.OPEN_TURN):
 			localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = true
@@ -477,7 +508,7 @@ func getCardsListComboTypeAndOrdering(cardsList):
 		#if everyone passed, and it is now back at your own turn, you can play anything you want
 		if(checkIfIsAnOpenTurn()):
 			localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = true
-	print("result is",localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard)
+	# print("result is",localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard)
 		# if(currentTurnDirectionalOrientation == selfPlayerDirectionalOrientation):
 			# localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = true
 	return {
@@ -708,6 +739,13 @@ func startGame():
 	for currentDirectionalOrientation in range(PLAYER_COUNT):
 
 		var playerId = allPlayerIdList[currentDirectionalOrientation] #
+		# print("what tf")
+		# print(allPlayerIdList)
+		# print(playerId)
+		if(lobbyContainsRobot and playerId < 0):
+
+			robotPositions.push_back(currentDirectionalOrientation)
+
 		var currentScreenOrientation = selfDirectionOriToScreenOri[currentDirectionalOrientation] #first one will be selfPlayerDirectionalOrientation #could be west and you are bot
 		distributeCards({
 			temporaryCardStack = temporaryCardStack,
