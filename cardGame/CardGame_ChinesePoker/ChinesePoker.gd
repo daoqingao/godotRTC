@@ -5,7 +5,7 @@ class_name ChinesePokerGameManager
 @onready var BTCard = preload("res://cardGame/CardGame_ChinesePoker/BTCard.tscn")
 @onready var camera = $Camera2D
 @onready var playCardsButton = $PlayCardsButton
-@onready var playerInfoLabel = $PlayerInfo
+@onready var playerInfoLabel = $TestRelated/PlayerInfo
 @onready var autoPlayToggle = $AutoPlayToggle
 
 @onready var leftAvatar = $PlayerAvatarsCollection/BtPlayerAvatarLeft
@@ -329,7 +329,7 @@ func _on_auto_play_toggle_toggled(toggled_on):
 	if(gameIsFinished):
 		print("game is finished")
 		return
-		
+
 	# autoPlayToggle.pressed = !autoPlayToggle.pressed
 	selfAutoRobotPlay = toggled_on
 	if(toggled_on  == true):
@@ -354,19 +354,26 @@ func makeComputerPlayACard():
 		cardsLastPlayedComboType = CardPlayedComboType.OPEN_TURN
 		cardsLastPlayedComboOrdering = 0
 
+	#the robot will only check the first half of the cards in the list for a playable quint set.
+	var prematureQuintBreakFlag = true 
+	var prematureQuintCheckSize = 8 #only check the first 8 cards for a quint
 	if !foundAPlayableCard and (cardsLastPlayedComboType == CardPlayedComboType.QUINT or isOnAnOpenTurn  or cardsLastPlayedComboType== CardPlayedComboType.FIRST_TO_PLAY_MUST_PLAY_THREE_OF_DIAMONDS):
-		#check for every quint card.
-		for card1 in computerCardsOnHand.values():
-			for card2 in computerCardsOnHand.values():
+		#check for every half a quint card
+		var cardsToCheckArr = computerCardsOnHand.values()
+		if(prematureQuintBreakFlag):
+			var cardsSize = cardsToCheckArr.size()
+			cardsToCheckArr = cardsToCheckArr.slice(0,prematureQuintCheckSize)
+		for card1 in cardsToCheckArr:
+			for card2 in cardsToCheckArr:
 				if(card1.id == card2.id):
 					continue
-				for card3 in computerCardsOnHand.values():
+				for card3 in cardsToCheckArr:
 					if(card1.id == card3.id or card2.id == card3.id):
 						continue
-					for card4 in computerCardsOnHand.values():
+					for card4 in cardsToCheckArr:
 						if(card1.id == card4.id or card2.id == card4.id or card3.id == card4.id):
 							continue
-						for card5 in computerCardsOnHand.values():
+						for card5 in cardsToCheckArr:
 							if(card1.id == card5.id or card2.id == card5.id or card3.id == card5.id or card4.id == card5.id):
 								continue
 							var cardsSelectedToPlayList = [card1,card2,card3,card4,card5]
@@ -872,9 +879,9 @@ var maxLogSize = 10
 func _log(msg):
 	maxLogSize+=1
 	if(maxLogSize > 10):
-		$DebugLog.text = ""
+		$TestRelated/DebugLog.text = ""
 		maxLogSize = 0
-	$DebugLog.text += str(msg) + "\n"
+	$TestRelated/DebugLog.text += str(msg) + "\n"
 
 
 var doneInitialized = false

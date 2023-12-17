@@ -40,37 +40,30 @@ shape = SubResource("RectangleShape2D_67l80")
 [node name="DropSnapPos" type="Node2D" parent="DropArea"]
 position = Vector2(19.9426, 19.8174)
 
-[node name="AllTestRelatedFunctionalities" type="Node2D" parent="."]
+[node name="PlayerAvatarsCollection" type="Node2D" parent="."]
 
-[node name="MockAnotherPlayPlayedACard" type="Button" parent="AllTestRelatedFunctionalities"]
-offset_right = 8.0
-offset_bottom = 8.0
-text = "FORCE the current player to play turn as robot"
+[node name="BtPlayerAvatarBot" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
+position = Vector2(-26, 127)
 
-[node name="PlayCardsButton" type="Button" parent="."]
-offset_left = 200.0
-offset_top = 127.0
-offset_right = 351.0
-offset_bottom = 156.0
-disabled = true
-text = "Comfirm Play Cards"
+[node name="BtPlayerAvatarLeft" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
+position = Vector2(-322, -155)
 
-[node name="DebugLog" type="Label" parent="."]
+[node name="BtPlayerAvatarTop" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
+position = Vector2(569, -220)
+
+[node name="BtPlayerAvatarRight" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
+position = Vector2(569, 84)
+
+[node name="TestRelated" type="Node2D" parent="."]
+
+[node name="DebugLog" type="Label" parent="TestRelated"]
 offset_left = -627.0
 offset_top = 29.0
 offset_right = -516.0
 offset_bottom = 50.0
 scale = Vector2(0.75, 0.75)
 
-[node name="PassTurnButton" type="Button" parent="."]
-offset_left = 121.0
-offset_top = 127.0
-offset_right = 162.0
-offset_bottom = 156.0
-text = "Pass
-"
-
-[node name="PlayerInfo" type="Label" parent="."]
+[node name="PlayerInfo" type="Label" parent="TestRelated"]
 offset_left = -627.0
 offset_top = -360.0
 offset_right = 197.0
@@ -92,19 +85,21 @@ text = "		You are player: \" + str(selfPlayerId) + \"
 		Last played by directional orientation: \" + getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + \"
 		Is on open turn: \" + str(isOnAnOpenTurn) + \""
 
-[node name="PlayerAvatarsCollection" type="Node2D" parent="."]
+[node name="PlayCardsButton" type="Button" parent="."]
+offset_left = 200.0
+offset_top = 127.0
+offset_right = 351.0
+offset_bottom = 156.0
+disabled = true
+text = "Comfirm Play Cards"
 
-[node name="BtPlayerAvatarBot" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
-position = Vector2(-26, 127)
-
-[node name="BtPlayerAvatarLeft" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
-position = Vector2(-322, -155)
-
-[node name="BtPlayerAvatarTop" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
-position = Vector2(569, -220)
-
-[node name="BtPlayerAvatarRight" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
-position = Vector2(569, 84)
+[node name="PassTurnButton" type="Button" parent="."]
+offset_left = 121.0
+offset_top = 127.0
+offset_right = 162.0
+offset_bottom = 156.0
+text = "Pass
+"
 
 [node name="AutoPlayToggle" type="CheckButton" parent="."]
 offset_left = -322.0
@@ -113,10 +108,15 @@ offset_right = -278.0
 offset_bottom = 53.0
 text = "AutoPlay"
 
+[node name="ForcePlayerPlayCardButton" type="Button" parent="."]
+offset_right = 337.0
+offset_bottom = 29.0
+text = "FORCE the current player to play turn as robot"
+
 [connection signal="area_entered" from="DropArea" to="." method="_on_drop_area_area_entered"]
 [connection signal="area_exited" from="DropArea" to="." method="_on_drop_area_area_exited"]
-[connection signal="pressed" from="AllTestRelatedFunctionalities/MockAnotherPlayPlayedACard" to="." method="_on_button_pressed"]
 [connection signal="pressed" from="PlayCardsButton" to="." method="_on_play_cards_button_pressed"]
 [connection signal="pressed" from="PassTurnButton" to="." method="_on_pass_turn_button_pressed"]
 [connection signal="pressed" from="AutoPlayToggle" to="." method="_on_auto_play_toggle_pressed"]
 [connection signal="toggled" from="AutoPlayToggle" to="." method="_on_auto_play_toggle_toggled"]
+[connection signal="pressed" from="ForcePlayerPlayCardButton" to="." method="_on_button_pressed"]
