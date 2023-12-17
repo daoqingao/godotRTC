@@ -29,7 +29,8 @@ enum CardPlayedComboType {
 	DOUBLE,
 	QUINT,
 	INVALID_COMBO,
-	OPEN_TURN
+	OPEN_TURN,
+	FIRST_TO_PLAY_MUST_PLAY_THREE_OF_DIAMONDS
 }
 const PlayedSizeToComboType = {
 	1:CardPlayedComboType.SINGLE,
@@ -90,6 +91,7 @@ var CardsOnPlayersHands = { #THESE ARE ALSO THE INDEX!!!!!!! 0,1,2,3
 var allCards = {} # <cardid : BTCard>
 var currentTurnDirectionalOrientation = DirectionOrientation.EAST #the player that is currently playing #
 
+var winnersListDirectionalOrientation = [] #the player that is currently playing 
 
 
 
@@ -97,7 +99,7 @@ var currentTurnDirectionalOrientation = DirectionOrientation.EAST #the player th
 ################################################# DATA THAT are related to the cards being played,
 #cards that are were last played. we need to compare to this
 var cardsLastPlayedList = [] #array of card ids that werw last played
-var cardsLastPlayedComboType = CardPlayedComboType.OPEN_TURN #something like that	
+var cardsLastPlayedComboType = CardPlayedComboType.FIRST_TO_PLAY_MUST_PLAY_THREE_OF_DIAMONDS #something like that	
 var cardsLastPlayedQuintComboType = QuintComboType.NO_QUINT_COMBO #something like that
 var cardsLastPlayedComboOrdering = 0 #the ranking of the combo, used to compare with the next combo
 
@@ -109,6 +111,7 @@ var cardsSelectedToPlayList = [] #array of card that are selected
 var cardsSelectedToPlayComboType = CardPlayedComboType.INVALID_COMBO #something like that
 var cardsSelectedToPlayQuintComboType = QuintComboType.NO_QUINT_COMBO #something like that
 var cardsSelectedToPlayComboOrdering = -1
+
 
 
 
@@ -133,6 +136,8 @@ var selfDirectionOriToScreenOri = {
 
 var lobbyContainsRobot = false
 var robotPositions = []
+
+var selfAutoRobotPlay = true
 
 func _ready():
 	# print("reading, sohuld be called twice") #gets called twice thats good.....
@@ -194,12 +199,23 @@ func handlePropagatedTurnPlayed(propagatedData):
 
 	var yourCardsOnHandData = CardsOnPlayersHands[cardsLastPlayedDirectionalOrientation]
 	#remove all the cards that were played in cardslastPlayedIdList
+	# print("your cards on hand before",yourCardsOnHandData)
 	for cardId in cardsLastToPlayIdList:
 		#is you are the owner of the cards, make the flag false
 		if(yourCardsOnHandData.get(cardId).isOwnedByCurrentPlayer):
 			yourCardsOnHandData.get(cardId).isOwnedByCurrentPlayer = false
 		yourCardsOnHandData.erase(cardId)
-	
+	#check if the player won!
+
+	#check if the player has no more cards left
+	if(yourCardsOnHandData.size() == 0):
+		winnersListDirectionalOrientation.push_back(cardsLastPlayedDirectionalOrientation)
+		_log(getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + " has won the game!")
+	if(winnersListDirectionalOrientation.size() == 4):
+		#GAME OVER!
+		_log("GAME OVER!")
+		return
+
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(cardsLastPlayedDirectionalOrientation) #this is the next player turn
 	# clear the previous board 
 	for card in propagatedData.propagatedLASTLASTCardsPlayedIdList.map(func(cardId): return allCards[cardId]):
@@ -218,7 +234,7 @@ func checkIfHostShouldAllowRobotToPlay():
 	if(selfPlayerId == Gamedata.HOST_ID):
 		if(lobbyContainsRobot):
 			if(robotPositions.find(currentTurnDirectionalOrientation) != -1):
-				await get_tree().create_timer(0.50).timeout
+				await get_tree().create_timer(0.2).timeout
 				_log("robot is thinking to playing a card")
 				makeComputerPlayACard()
 			else:
@@ -229,7 +245,9 @@ func handlePropagatedInit(propagatedData):
 	allPlayerIdList = propagatedData.peerPlayers.keys()
 	allPlayerIdList.sort() #make sure the things are consistent, because the index you are in determines the orientation
 	#if any of the playerid are negative, that means it is a robot
-	if(allPlayerIdList.find(func(playerId): return playerId < 0) != null):
+
+	#find doesnt take a function, so we need another way to check if the array contains a negative number
+	if(	allPlayerIdList.filter(func(playerId): return playerId < 0).size() > 0):
 		print('has a lobby with a robot')
 		lobbyContainsRobot = true
 
@@ -240,6 +258,12 @@ func handlePropagatedInit(propagatedData):
 	startGame()
 	doneInitialized = true
 	checkIfHostShouldAllowRobotToPlay()
+	#terribly bootleg scuffed way to init the text.
+	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(currentTurnDirectionalOrientation) #this is the next player turn
+	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(currentTurnDirectionalOrientation) #this is the next player turn
+	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(currentTurnDirectionalOrientation) #this is the next player turn
+	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(currentTurnDirectionalOrientation) #this is the next player turn
+
 ####################### Event Handlers For Buttons On UI
 func _on_play_cards_button_pressed():
 
@@ -303,7 +327,7 @@ func makeComputerPlayACard():
 		cardsLastPlayedComboType = CardPlayedComboType.OPEN_TURN
 		cardsLastPlayedComboOrdering = 0
 
-	if cardsLastPlayedComboOrdering == CardPlayedComboType.QUINT or isOnAnOpenTurn and !foundAPlayableCard:
+	if !foundAPlayableCard and (cardsLastPlayedComboType == CardPlayedComboType.QUINT or isOnAnOpenTurn  or cardsLastPlayedComboType== CardPlayedComboType.FIRST_TO_PLAY_MUST_PLAY_THREE_OF_DIAMONDS):
 		#check for every quint card.
 		for card1 in computerCardsOnHand.values():
 			for card2 in computerCardsOnHand.values():
@@ -339,7 +363,7 @@ func makeComputerPlayACard():
 					break
 			if(foundAPlayableCard):
 				break
-	if cardsLastPlayedComboType == CardPlayedComboType.DOUBLE or isOnAnOpenTurn and !foundAPlayableCard:
+	if !foundAPlayableCard and (cardsLastPlayedComboType == CardPlayedComboType.DOUBLE or isOnAnOpenTurn or cardsLastPlayedComboType== CardPlayedComboType.FIRST_TO_PLAY_MUST_PLAY_THREE_OF_DIAMONDS):
 		#play a double card that is allowed to be played. else pass
 		#check for every double card.
 		for card1 in computerCardsOnHand.values():
@@ -358,9 +382,10 @@ func makeComputerPlayACard():
 					break
 			if(foundAPlayableCard):
 				break
-	if cardsLastPlayedComboType == CardPlayedComboType.SINGLE or isOnAnOpenTurn and !foundAPlayableCard:
+	if !foundAPlayableCard and (cardsLastPlayedComboType == CardPlayedComboType.SINGLE or isOnAnOpenTurn or cardsLastPlayedComboType== CardPlayedComboType.FIRST_TO_PLAY_MUST_PLAY_THREE_OF_DIAMONDS):
 		#play a single card that is allowed to be played. else pass
 		#check for every single card.
+		#break out of the if statement if you found a playable card
 		for card in computerCardsOnHand.values():
 			var cardsSelectedToPlayList = [card]
 			var cardsSelectedComboAndOrderingData = getCardsListComboTypeAndOrdering(cardsSelectedToPlayList)
@@ -375,6 +400,8 @@ func makeComputerPlayACard():
 
 
 	if(foundAPlayableCard):
+		print("THE ROBOT DECIDE TO PLAY: ",computerCardsSelectedToPlayList.map(func(card): return card.getShortRankAndSuitString()))
+
 		Gamedata.propagateActionType.rpc(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
 			propagatedCardsPlayedByPlayerId = -1000,
 			propagatedCardsPlayedByDirectionalOrientation = currentTurnDirectionalOrientation,
@@ -398,11 +425,16 @@ func makeComputerPlayACard():
 
 #move from SOTUH to WEST to NORTH to EAST to SOUTH
 func cycleToNextPlayerTurn(directionalOrientation):
+
 	var previousDirectionalOri = directionalOrientation
 	var nextPlayerTurn = (directionalOrientation+1) % PLAYER_COUNT
 
-	print("previous turn is",getDirectionOriEnumStr(directionalOrientation))
-	print("now it is cycled to turn is",getDirectionOriEnumStr(nextPlayerTurn))
+	#check if the next player turn is a winner, if so, cycle again
+	while(winnersListDirectionalOrientation.find(nextPlayerTurn) != -1):
+		nextPlayerTurn = (nextPlayerTurn+1) % PLAYER_COUNT
+
+	# print("previous turn is",getDirectionOriEnumStr(directionalOrientation))
+	# print("now it is cycled to turn is",getDirectionOriEnumStr(nextPlayerTurn))
 
 
 	var getLastScreenOri = selfDirectionOriToScreenOri[previousDirectionalOri]
@@ -475,6 +507,18 @@ func getCardsListComboTypeAndOrdering(cardsList):
 	var localCardsSelectedToPlayQuintComboType = QuintComboType.NO_QUINT_COMBO #something like that
 	var localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = false
 
+	#if playing the 3 of diamonds then check if the list has a 3 of diamonds
+	if(cardsLastPlayedComboType == CardPlayedComboType.FIRST_TO_PLAY_MUST_PLAY_THREE_OF_DIAMONDS):
+		# print("checking if you have a three of diamonds")
+		if(cardsList.filter(func(card): return card.rank == '3' and card.suit == 'diamonds').size() == 0):
+			# print("you must play the 3 of diamonds")
+			localCardsSelectedToPlayComboType = CardPlayedComboType.INVALID_COMBO
+			return {
+				"comboType":localCardsSelectedToPlayComboType,
+				"comboOrdering":localCardsSelectedToPlayComboOrdering,
+				"quintComboType":localCardsSelectedToPlayQuintComboType,
+				"comboCanBePlayedFlag":false
+			}
 	var cardPlayedSize = cardsList.size()
 	if(cardPlayedSize == 1):
 		localCardsSelectedToPlayComboOrdering = getSingleComboOrdering(cardsList)
@@ -500,7 +544,7 @@ func getCardsListComboTypeAndOrdering(cardsList):
 
 	# print("comparing the ordering right now, previous ordering is",cardsLastPlayedComboOrdering,"current ordering is",localCardsSelectedToPlayComboOrdering)
 	if(localCardsSelectedToPlayComboType != CardPlayedComboType.INVALID_COMBO):
-		if(cardsLastPlayedComboType == CardPlayedComboType.OPEN_TURN):
+		if(cardsLastPlayedComboType == CardPlayedComboType.OPEN_TURN or cardsLastPlayedComboType == CardPlayedComboType.FIRST_TO_PLAY_MUST_PLAY_THREE_OF_DIAMONDS):
 			localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = true
 		elif(localCardsSelectedToPlayComboType == cardsLastPlayedComboType):
 			if(localCardsSelectedToPlayComboOrdering > cardsLastPlayedComboOrdering):
@@ -509,6 +553,9 @@ func getCardsListComboTypeAndOrdering(cardsList):
 		if(checkIfIsAnOpenTurn()):
 			localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = true
 	# print("result is",localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard)
+	if(localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard):
+		print("the local cardselect to play combo type is = ",getEnumStr(CardPlayedComboType,localCardsSelectedToPlayComboType))
+		print("the card play list is = ",cardsList.map(func(card): return card.getShortRankAndSuitString()))	
 		# if(currentTurnDirectionalOrientation == selfPlayerDirectionalOrientation):
 			# localCardsSelectedCanBePlayedFlagComparedToLastPlayedCard = true
 	return {
@@ -765,6 +812,9 @@ func distributeCards(data):
 
 	for i in range(NUM_CARDS_PER_PLAYER):
 		var card = data.temporaryCardStack.pop_back()
+		if(card.suit == 'diamonds' and card.rank == '3'):
+			currentTurnDirectionalOrientation = data.currentDirectionOrientation # the player with 3 of diamonds goes first.
+			_log("player with 3 of diamonds goes first, and it is " + getDirectionOriEnumStr(currentTurnDirectionalOrientation))
 		card.initBTCardOwner(data.isOwnedByCurrentPlayer,data.playerId,data.currentDirectionOrientation,data.currentScreenOrientation)
 		CardsOnPlayersHands[data.currentDirectionOrientation][card.id] = card
 		if(!data.isOwnedByCurrentPlayer):
@@ -773,17 +823,7 @@ func distributeCards(data):
 			card.restSnapPos = Vector2(initX+distance*counter+offSetX,initY)
 		counter+=1  
 
-	playerInfoLabel.text = "
-	You are player: " + str(selfPlayerId) + "
-	Your directional orientation is: " + getDirectionOriEnumStr(selfPlayerDirectionalOrientation) + "
-	Your # of card on hand is: " + str(CardsOnPlayersHands[selfPlayerDirectionalOrientation].size()) + "
-	You have selected to Play: " + str(cardsSelectedToPlayList.size()) + " cards
-	Your combo is: " + getEnumStr(CardPlayedComboType,cardsSelectedToPlayComboType) + "
-	Your quint combo is: " + getEnumStr(QuintComboType,cardsSelectedToPlayQuintComboType) + "
-	Your combo ordering is: " + str(cardsSelectedToPlayComboOrdering) + "
-	Current turn is: " + getDirectionOriEnumStr(currentTurnDirectionalOrientation) + "
-	Last Player Played Directional Orientation is: " + getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + "
-	"
+	
 	
 
 
@@ -808,6 +848,7 @@ func _log(msg):
 
 var doneInitialized = false
 func _process(delta):
+	
 	if(!doneInitialized):
 		return
 	playerInfoLabel.text = "
@@ -826,6 +867,10 @@ func _process(delta):
 		Last played by player id: " + str(cardsLastPlayedPlayerId) + "
 		Last played by directional orientation: " + getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + "
 		Is on open turn: " + str(checkIfIsAnOpenTurn()) + "
+		North: " + str(CardsOnPlayersHands[DirectionOrientation.NORTH].values().map(func (card): return card.getShortRankAndSuitString())) + "
+		East: " + str(CardsOnPlayersHands[DirectionOrientation.EAST].values().map(func (card): return card.getShortRankAndSuitString())) + "
+		South: " + str(CardsOnPlayersHands[DirectionOrientation.SOUTH].values().map(func (card): return card.getShortRankAndSuitString())) + "
+		West: " + str(CardsOnPlayersHands[DirectionOrientation.WEST].values().map(func (card): return card.getShortRankAndSuitString())) + "
 		"
 	return
 
