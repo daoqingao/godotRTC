@@ -113,6 +113,21 @@ offset_right = 337.0
 offset_bottom = 29.0
 text = "FORCE the current player to play turn as robot"
 
+[node name="SortCards" type="Button" parent="."]
+offset_left = -262.0
+offset_top = 58.0
+offset_right = -184.0
+offset_bottom = 87.0
+text = "Sort hand"
+
+[node name="RestartGameButton" type="Button" parent="."]
+offset_left = -302.0
+offset_top = 105.0
+offset_right = -294.0
+offset_bottom = 113.0
+disabled = true
+text = "Restart"
+
 [connection signal="area_entered" from="DropArea" to="." method="_on_drop_area_area_entered"]
 [connection signal="area_exited" from="DropArea" to="." method="_on_drop_area_area_exited"]
 [connection signal="pressed" from="PlayCardsButton" to="." method="_on_play_cards_button_pressed"]
@@ -120,3 +135,5 @@ text = "FORCE the current player to play turn as robot"
 [connection signal="pressed" from="AutoPlayToggle" to="." method="_on_auto_play_toggle_pressed"]
 [connection signal="toggled" from="AutoPlayToggle" to="." method="_on_auto_play_toggle_toggled"]
 [connection signal="pressed" from="ForcePlayerPlayCardButton" to="." method="_on_button_pressed"]
+[connection signal="pressed" from="SortCards" to="." method="_on_sort_cards_pressed"]
+[connection signal="pressed" from="RestartGameButton" to="." method="_on_restart_game_button_pressed"]

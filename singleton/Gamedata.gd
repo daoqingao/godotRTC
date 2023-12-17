@@ -74,7 +74,9 @@ func hostStartGameInitRPSData():
 
 
 func hostStartGameInitChinesePoker():
-	var playerSize = peerPlayers.size()
+	var humanPlayerSize = peerPlayers.size()
+
+	var propagatedPeerPlayerSize = peerPlayers.duplicate(true)
 	var requiredPlayers = 4 #TODO: is at 2 but should be 4
 	playersSignalConnectedAndReadiedCount = 0
 	# if(playerSize != requiredPlayers):
@@ -82,13 +84,13 @@ func hostStartGameInitChinesePoker():
 	# 	print("unable to start chinese poker because it requires 4 players.")
 	# 	return
 
-	if(playerSize < 4):
+	if(humanPlayerSize < 4):
 		#make it so that we fill the rest of the players with bots 
 		#bot peerPlayerId will be negative
-		for i in range(4-playerSize): #4-2 = -2
-			peerPlayers[-i-1-1] = -1
+		for i in range(4-humanPlayerSize): #4-2 = -2
+			propagatedPeerPlayerSize[-i-1-1] = -1
 		print("not enough people, starting lobby with robots")
-		print(peerPlayers)
+		print(propagatedPeerPlayerSize)
 		# peerPlayers= {
 		# 		1:1, 
 		# 		-20:22,
@@ -96,18 +98,24 @@ func hostStartGameInitChinesePoker():
 		# 		-4444:4444
 		# 	}
 	print("starting chinese poker")
+	# get_tree().change_scene_to_file(LobbyScenePath)
 	get_tree().change_scene_to_file(ChinesePokerScenePath)
 	if(playerId == HOST_ID):
+		print("waiting for players to connect")
+		print(playersSignalConnectedAndReadiedCount)
+		print(humanPlayerSize)
 		#must wait for scene to hook up .connect before they can handle propagated action....
-		while (self.playersSignalConnectedAndReadiedCount!= playerSize):
+		while (self.playersSignalConnectedAndReadiedCount < humanPlayerSize):
 			await get_tree().create_timer(0.25).timeout
 			# print("waiting")
 		print("all players are conneted, ready to start")
+		print("amount of players connected as humans: ",playersSignalConnectedAndReadiedCount)
 		pregeneratedSeed = randi() #this thing will ALWAYS BE THE SAME throughout the game
 		propagateActionType.rpc(
 			ConnectionActionType.INIT,{
-			peerPlayers= peerPlayers,
+			peerPlayers= propagatedPeerPlayerSize, #this can contain robots and humans
 			pregeneratedSeed=pregeneratedSeed
 		}) #list of all the players basically.
+
 
 signal propagateActionToPeers(actionType, newRPSData)

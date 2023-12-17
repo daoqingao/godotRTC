@@ -7,6 +7,7 @@ class_name ChinesePokerGameManager
 @onready var playCardsButton = $PlayCardsButton
 @onready var playerInfoLabel = $TestRelated/PlayerInfo
 @onready var autoPlayToggle = $AutoPlayToggle
+@onready var restartButton = $RestartGameButton
 
 @onready var leftAvatar = $PlayerAvatarsCollection/BtPlayerAvatarLeft
 @onready var topAvatar = $PlayerAvatarsCollection/BtPlayerAvatarTop
@@ -142,11 +143,12 @@ var robotPositions = []
 var selfAutoRobotPlay = false
 
 var gameIsFinished = false
-
+var currentGameRNGSeed = -1
 func _ready():
 	# print("reading, sohuld be called twice") #gets called twice thats good.....
 	Gamedata.propagateActionToPeers.connect(handlePropagatedAction)
 	Gamedata.propagateActionType.rpc_id(Gamedata.HOST_ID,Gamedata.ConnectionActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED,{})
+	restartButton.disabled = true
 	#stubbed data to init with 4 players
 
 	#TODO: !!!!!!!!!! REMOVE THIS WHEN MAKING MULTIPLAYER!!!!!!!!!!!!!!!!!!!!!!!
@@ -264,6 +266,7 @@ func handlePropagatedInit(propagatedData):
 
 	#0 is SOUTH, 1 is WEST, 2 IS NORTH, 3 IS EAST, (EXACTLY LIKE THE ENUM)
 	selfPlayerId = Gamedata.playerId
+	currentGameRNGSeed = propagatedData.pregeneratedSeed
 	seed(propagatedData.pregeneratedSeed)
 	startGame()
 	doneInitialized = true
@@ -273,7 +276,8 @@ func handlePropagatedInit(propagatedData):
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(currentTurnDirectionalOrientation) #this is the next player turn
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(currentTurnDirectionalOrientation) #this is the next player turn
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(currentTurnDirectionalOrientation) #this is the next player turn
-
+	handleSortSelfCardsOnHand()
+	restartButton.disabled = false
 ####################### Event Handlers For Buttons On UI
 func _on_play_cards_button_pressed():
 	if(gameIsFinished):
@@ -336,6 +340,14 @@ func _on_auto_play_toggle_toggled(toggled_on):
 		_log("auto play is on")
 		checkIfHostShouldAllowRobotToPlay()
 	pass # Replace with function body.
+
+
+
+
+func _on_sort_cards_pressed():
+	handleSortSelfCardsOnHand()
+
+
 func makeComputerPlayACard():
 	#make a random card play
 	print("making a computer play a card")
@@ -361,8 +373,8 @@ func makeComputerPlayACard():
 		#check for every half a quint card
 		var cardsToCheckArr = computerCardsOnHand.values()
 		if(prematureQuintBreakFlag):
-			var cardsSize = cardsToCheckArr.size()
 			cardsToCheckArr = cardsToCheckArr.slice(0,prematureQuintCheckSize)
+			cardsToCheckArr.sort_custom(func(cardA,cardB): return getSingleComboOrdering([cardA]) > getSingleComboOrdering([cardB]))
 		for card1 in cardsToCheckArr:
 			for card2 in cardsToCheckArr:
 				if(card1.id == card2.id):
@@ -862,7 +874,29 @@ func distributeCards(data):
 		counter+=1  
 
 	
+####################### making things look pretty ANIMATION FUNCTIONS
+var isSortedAscending = false
+func handleSortSelfCardsOnHand():
 	
+	var cardsOnHand = CardsOnPlayersHands[selfPlayerDirectionalOrientation]
+	var cardsOnHandArr = cardsOnHand.values()
+	if(isSortedAscending):
+		cardsOnHandArr.sort_custom(func(cardA,cardB): return getSingleComboOrdering([cardA]) > getSingleComboOrdering([cardB]))
+		isSortedAscending = false
+	else:
+		cardsOnHandArr.sort_custom(func(cardA,cardB): return getSingleComboOrdering([cardA]) < getSingleComboOrdering([cardB]))
+		isSortedAscending = true;
+
+
+	print("sorted cards on hand",cardsOnHandArr.map(func(card): return card.getShortRankAndSuitString()))
+	var initY = 300
+	var initX = 0
+	var offSetX = -600
+	var distance = 1280/13
+	var counter = 0
+	for card in cardsOnHandArr:
+		card.restSnapPos = Vector2(initX+distance*counter+offSetX,initY)
+		counter+=1
 
 
 ####################### UTILITY FUNCTIONS
@@ -884,6 +918,9 @@ func _log(msg):
 	$TestRelated/DebugLog.text += str(msg) + "\n"
 
 
+
+
+	
 var doneInitialized = false
 func _process(delta):
 	
@@ -909,6 +946,7 @@ func _process(delta):
 		East: " + str(CardsOnPlayersHands[DirectionOrientation.EAST].values().map(func (card): return card.getShortRankAndSuitString())) + "
 		South: " + str(CardsOnPlayersHands[DirectionOrientation.SOUTH].values().map(func (card): return card.getShortRankAndSuitString())) + "
 		West: " + str(CardsOnPlayersHands[DirectionOrientation.WEST].values().map(func (card): return card.getShortRankAndSuitString())) + "
+		currentRNGSeed: " + str(currentGameRNGSeed) + "
 		"
 	return
 
@@ -918,6 +956,10 @@ func _process(delta):
 
 
 
+func _on_restart_game_button_pressed():
+	restartButton.disabled = true
+	Gamedata.propagateActionType.rpc(Gamedata.ConnectionActionType.RESTART,Gamedata.GameType.CHINESE_POKER)
+	pass # Replace with function body.
 
 
 
