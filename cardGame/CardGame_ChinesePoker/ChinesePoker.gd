@@ -475,6 +475,10 @@ func makeComputerPlayACard():
 			propagatedLASTLASTCardsPlayedIdList = cardsLastPlayedList.map(func(card): return card.id),
 
 		}, BTActionType.TURN_PLAYED)
+		# remove the cards from the selected list
+		for card in computerCardsSelectedToPlayList:
+			if(cardsSelectedToPlayList.find(card) != -1):
+				cardsSelectedToPlayList.erase(card)
 	else:
 		Gamedata.propagateActionType.rpc(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
 			propagatedCardsPlayedByPlayerId = -1000,

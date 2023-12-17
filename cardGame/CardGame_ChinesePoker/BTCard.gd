@@ -70,7 +70,8 @@ func _physics_process(delta):
 	# 	position = lerp(position,get_global_mouse_position(),25 * delta)
 	# 	restSnapPos = position
 	# else:
-	position = lerp(position,restSnapPos,lerpSpeed * delta)
+	# position = lerp(position,restSnapPos,lerpSpeed * delta)
+	return
 func _ready():
 	pass 
 
@@ -81,7 +82,12 @@ func _process(delta):
 
 
 func setCardRestSnapPos(pos,reason=-1):
+	get_tree().create_tween().tween_property(self,
+	"position",
+	pos,.25).set_trans(4)
 	restSnapPos = pos
+	#use tween to move the card to the restSnapPos
+
 
 
 func _to_string():
