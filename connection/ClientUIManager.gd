@@ -8,7 +8,7 @@ extends Control
 
 var finalizedPeerPlayers={}
 func _ready():
-	if(OS.is_debug_build() && true):
+	if(OS.is_debug_build() && false):
 		print("starting in debug/dev mode, connecting to localhost signal server")
 		host.text = "ws://localhost:7000"
 	else:

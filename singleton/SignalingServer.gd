@@ -4,7 +4,7 @@ enum Message {JOIN, ID, PEER_CONNECT, PEER_DISCONNECT, OFFER, ANSWER, CANDIDATE,
 
 const TIMEOUT = 1000 # Unresponsive clients times out after 1 sec
 const SEAL_TIME = 10000 # A sealed room will be closed after this time
-const ALFNUM = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+const ALFNUM = "abcdefghijklmnopqrstuvwxyz0123456789"
 
 var _alfnum = ALFNUM.to_ascii_buffer()
 
@@ -147,6 +147,7 @@ func poll():
 			if lobbies.has(p.lobby) and lobbies[p.lobby].leave(p):
 				print("Deleted lobby %s" % p.lobby)
 				lobbies.erase(p.lobby)
+				
 			# Remove from peers
 			to_remove.push_back(p.id)
 
@@ -168,7 +169,7 @@ func poll():
 #creates a lobby only on the server side, contains the data of the peer that made it
 func _join_lobby(peer: Peer, lobby: String, mesh: bool) -> bool:
 	if lobby == "":
-		for _i in range(0, 32):
+		for _i in range(0, 6):
 			lobby += char(_alfnum[rand.randi_range(0, ALFNUM.length()-1)])
 		if lobbiesCreated==0:
 			lobbiesCreated+=1

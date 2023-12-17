@@ -4,10 +4,12 @@ class_name ChinesePokerGameManager
 
 @onready var BTCard = preload("res://cardGame/CardGame_ChinesePoker/BTCard.tscn")
 @onready var camera = $Camera2D
-@onready var playCardsButton = $PlayCardsButton
 @onready var playerInfoLabel = $TestRelated/PlayerInfo
-@onready var autoPlayToggle = $AutoPlayToggle
+
 @onready var restartButton = $RestartGameButton
+@onready var autoPlayToggle = $GameButtonContainer/AutoPlayToggle
+@onready var passTurnButton = $GameButtonContainer/PassTurnButton
+@onready var playCardsButton = $GameButtonContainer/PlayCardsButton
 
 @onready var leftAvatar = $PlayerAvatarsCollection/BtPlayerAvatarLeft
 @onready var topAvatar = $PlayerAvatarsCollection/BtPlayerAvatarTop
@@ -226,16 +228,21 @@ func handlePropagatedTurnPlayed(propagatedData):
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(cardsLastPlayedDirectionalOrientation) #this is the next player turn
 	# clear the previous board 
 	for card in propagatedData.propagatedLASTLASTCardsPlayedIdList.map(func(cardId): return allCards[cardId]):
-		card.restSnapPos = PLAYED_CARDS_SNAP_POSITION
+		# card.restSnapPos = PLAYED_CARDS_SNAP_POSITION
+		card.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION)
+		handleCardSFX(CardAction.DISCARDED)
+
+
 
 	#check for the robot to play a card if required... ;(
 	checkIfHostShouldAllowRobotToPlay()
-
+	enablePassButtonOnYourTurn()
 func handlePropagatedTurnPassed(propagatedData):
 
 	_log(getDirectionOriEnumStr(propagatedData.propagatedCardsPlayedByDirectionalOrientation)+ " passed")
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(propagatedData.propagatedCardsPlayedByDirectionalOrientation) #this is the next player turn
 	checkIfHostShouldAllowRobotToPlay()
+	enablePassButtonOnYourTurn()
 
 func checkIfHostShouldAllowRobotToPlay():
 	if(selfPlayerId == Gamedata.HOST_ID):
@@ -279,6 +286,15 @@ func handlePropagatedInit(propagatedData):
 	handleSortSelfCardsOnHand()
 	restartButton.disabled = false
 ####################### Event Handlers For Buttons On UI
+
+func enablePassButtonOnYourTurn():
+	if(currentTurnDirectionalOrientation == selfPlayerDirectionalOrientation):
+		playCardsButton.disabled = true
+		passTurnButton.disabled = false
+	else:
+		playCardsButton.disabled = true
+		passTurnButton.disabled = true
+
 func _on_play_cards_button_pressed():
 	if(gameIsFinished):
 		print("game is finished")
@@ -523,11 +539,12 @@ func checkIfIsAnOpenTurn():
 	# 	isOnAnOpenTurn = false
 	# return isOnAnOpenTurn
 func handleOnCardIsSelected(card):
+	handleCardSFX(CardAction.SELECTED)
 	if(!card.isSelected):
-		card.restSnapPos = card.restSnapPos + Vector2(0,-50)
+		card.setCardRestSnapPos(card.restSnapPos + Vector2(0,-50))
 		cardsSelectedToPlayList.push_back(card)
 	else:
-		card.restSnapPos = card.restSnapPos + Vector2(0,50)
+		card.setCardRestSnapPos(card.restSnapPos + Vector2(0,50))
 		cardsSelectedToPlayList.erase(card)
 	print("selected card list",cardsSelectedToPlayList)
 	card.isSelected = !card.isSelected
@@ -724,21 +741,23 @@ func lerpCardsToCenter(cardsList,cardComboType):
 	#flip cards up
 	if(cardComboType == CardPlayedComboType.SINGLE):
 		var card = cardsList[0]
-		card.restSnapPos = PLAYED_CARDS_SNAP_POSITION
+		card.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION)
 		card.z_index = numCardsZIndexCounter
 		numCardsZIndexCounter+=1
 		card.flipCardUp()
+		handleCardSFX(CardAction.PLAYED)
 		return
 	elif(cardComboType == CardPlayedComboType.DOUBLE):
 		var card1 = cardsList[0]
 		var card2 = cardsList[1]
-		card1.restSnapPos = PLAYED_CARDS_SNAP_POSITION
-		card2.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(100,0)
+		card1.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION)
+		card2.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION + Vector2(100,0))
 		card1.z_index = numCardsZIndexCounter
 		card2.z_index = numCardsZIndexCounter
 		numCardsZIndexCounter += 1
 		card1.flipCardUp()
 		card2.flipCardUp()
+		handleCardSFX(CardAction.PLAYED)
 		return
 	elif(cardComboType == CardPlayedComboType.QUINT):
 		var card1 = cardsList[0]
@@ -746,11 +765,19 @@ func lerpCardsToCenter(cardsList,cardComboType):
 		var card3 = cardsList[2]
 		var card4 = cardsList[3]
 		var card5 = cardsList[4]
-		card1.restSnapPos = PLAYED_CARDS_SNAP_POSITION
-		card2.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(100,0)
-		card3.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(200,0)
-		card4.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(300,0)
-		card5.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(400,0)
+		# card1.restSnapPos = PLAYED_CARDS_SNAP_POSITION
+		# card2.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(100,0)
+		# card3.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(200,0)
+		# card4.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(300,0)
+		# card5.restSnapPos = PLAYED_CARDS_SNAP_POSITION + Vector2(400,0)
+		card1.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION)
+		card2.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION + Vector2(100,0))
+		card3.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION + Vector2(200,0))
+		card4.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION + Vector2(300,0))
+		card5.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION + Vector2(400,0))
+
+		handleCardSFX(CardAction.QUINT_PLAYED)
+
 		card1.z_index = numCardsZIndexCounter
 		card2.z_index = numCardsZIndexCounter
 		card3.z_index = numCardsZIndexCounter
@@ -878,21 +905,25 @@ func distributeCards(data):
 		card.initBTCardOwner(data.isOwnedByCurrentPlayer,data.playerId,data.currentDirectionOrientation,data.currentScreenOrientation)
 		CardsOnPlayersHands[data.currentDirectionOrientation][card.id] = card
 		if(!data.isOwnedByCurrentPlayer):
-			card.restSnapPos = posAvatarSnapPos
+			# card.restSnapPos = posAvatarSnapPos
+			card.setCardRestSnapPos(posAvatarSnapPos)
 			card.flipCardDown()
 
 		else: #you do own the card so lets put it on the bottom!!!
-			card.restSnapPos = Vector2(initX+distance*counter+offSetX,initY)
+			card.setCardRestSnapPos(Vector2(initX+distance*counter+offSetX,initY))
+			# card.restSnapPos = Vector2(initX+distance*counter+offSetX,initY)
 			card.flipCardUp()
 		counter+=1  
-
-	
+	handleCardSFX(CardAction.DISTRIBUTED)
 ####################### making things look pretty ANIMATION FUNCTIONS
 var isSortedAscending = false
 func handleSortSelfCardsOnHand():
 	
 	var cardsOnHand = CardsOnPlayersHands[selfPlayerDirectionalOrientation]
 	var cardsOnHandArr = cardsOnHand.values()
+	if(cardsOnHandArr.size() == 0):
+		return	
+
 	if(isSortedAscending):
 		cardsOnHandArr.sort_custom(func(cardA,cardB): return getSingleComboOrdering([cardA]) > getSingleComboOrdering([cardB]))
 		isSortedAscending = false
@@ -907,10 +938,33 @@ func handleSortSelfCardsOnHand():
 	var offSetX = -600
 	var distance = 1280/13
 	var counter = 0
+
+	handleCardSFX(CardAction.SORTED)
 	for card in cardsOnHandArr:
-		card.restSnapPos = Vector2(initX+distance*counter+offSetX,initY)
+		card.setCardRestSnapPos(Vector2(initX+distance*counter+offSetX,initY))
 		counter+=1
 
+@onready var cardSlide_SFX = 	$SoundSFX/cardSlideSFX
+@onready var cardPlaced_SFX = 	$SoundSFX/cardPlacedSFX
+@onready var cardDiscarded_SFX =$SoundSFX/cardDiscardedSFX
+enum CardAction {
+	PLAYED,DISTRIBUTED,SELECTED,DISCARDED,QUINT_PLAYED,SORTED
+}
+func handleCardSFX(cardAction):
+	if(cardAction == CardAction.PLAYED):
+		cardPlaced_SFX.play()
+	elif(cardAction == CardAction.DISTRIBUTED):
+		cardSlide_SFX.play()
+	elif(cardAction == CardAction.SELECTED):
+		cardSlide_SFX.play()
+	elif(cardAction == CardAction.DISCARDED):
+		cardDiscarded_SFX.play()
+	elif(cardAction == CardAction.QUINT_PLAYED):
+		cardPlaced_SFX.play()
+	elif(cardAction == CardAction.SORTED):
+		cardSlide_SFX.play()
+	else:
+		print("error, card action not found")
 
 ####################### UTILITY FUNCTIONS
 func getDirectionOriEnumStr(value):

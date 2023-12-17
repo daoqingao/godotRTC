@@ -8,6 +8,9 @@ enum DirectionOrientation {
 enum ScreenOrientation {
 	BOT,LEFT,TOP,RIGHT
 }
+enum CardAction {
+	PLAYED,DISTRIBUTED,SELECTED,DISCARDED,QUINT_PLAYED
+}
 func getDirectionOriEnumStr(value):
 	return getEnumStr(DirectionOrientation,value)
 func getScreenOriEnumStr(value):
@@ -26,11 +29,14 @@ var restSnapPos:Vector2 = Vector2.ZERO;
 var isInDroppableArea = false
 @onready var animation = $FlipCardAnimation
 
+# @onready var cardSlide_SFX = $cardSlideSFX
+# @onready var cardPlaced_SFX = $cardPlacedSFX
+# @onready var cardDiscarded_SFX = $cardDiscardedSFX
+
 
 #chinese poker related things
 var suit := ""
 var rank := ""
-
 var id := -1
 
 var isOwnedByCurrentPlayer = false
@@ -73,6 +79,9 @@ func _process(delta):
 	$Label.text = str(ownerPlayerId) + getDirectionOriEnumStr(directionOrientation) + getScreenOriEnumStr(screenOrientation) + str(id)
 	pass
 
+
+func setCardRestSnapPos(pos,reason=-1):
+	restSnapPos = pos
 
 
 func _to_string():

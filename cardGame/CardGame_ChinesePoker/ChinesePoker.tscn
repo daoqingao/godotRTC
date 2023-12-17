@@ -1,7 +1,10 @@
-[gd_scene load_steps=4 format=3 uid="uid://bxuthfgtaurup"]
+[gd_scene load_steps=7 format=3 uid="uid://bxuthfgtaurup"]
 
 [ext_resource type="Script" path="res://cardGame/CardGame_ChinesePoker/ChinesePoker.gd" id="1_vvo47"]
 [ext_resource type="PackedScene" uid="uid://uyybxckd7n4u" path="res://cardGame/CardGame_ChinesePoker/BTPlayerAvatar.tscn" id="2_5u8i0"]
+[ext_resource type="AudioStream" uid="uid://bgea8t7oc8w72" path="res://asset/sfx/cardSfx/cardSlide1.ogg" id="3_c6qfu"]
+[ext_resource type="AudioStream" uid="uid://diunjr5r57eut" path="res://asset/sfx/cardSfx/cardPlace3.ogg" id="4_u5blp"]
+[ext_resource type="AudioStream" uid="uid://mhmogedqiyma" path="res://asset/sfx/cardSfx/cardPlace2.ogg" id="5_h24x4"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_67l80"]
 size = Vector2(40, 40)
@@ -10,10 +13,6 @@ size = Vector2(40, 40)
 script = ExtResource("1_vvo47")
 
 [node name="Camera2D" type="Camera2D" parent="."]
-ignore_rotation = false
-
-[node name="DebugCamera" type="Camera2D" parent="."]
-rotation = 1.5708
 ignore_rotation = false
 
 [node name="PlayableArea" type="ColorRect" parent="."]
@@ -46,7 +45,7 @@ position = Vector2(19.9426, 19.8174)
 position = Vector2(-26, 127)
 
 [node name="BtPlayerAvatarLeft" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
-position = Vector2(-322, -155)
+position = Vector2(-544, -220)
 
 [node name="BtPlayerAvatarTop" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
 position = Vector2(569, -220)
@@ -55,12 +54,13 @@ position = Vector2(569, -220)
 position = Vector2(569, 84)
 
 [node name="TestRelated" type="Node2D" parent="."]
+visible = false
 
 [node name="DebugLog" type="Label" parent="TestRelated"]
 offset_left = -627.0
-offset_top = 29.0
+offset_top = -44.0
 offset_right = -516.0
-offset_bottom = 50.0
+offset_bottom = -23.0
 scale = Vector2(0.75, 0.75)
 
 [node name="PlayerInfo" type="Label" parent="TestRelated"]
@@ -85,55 +85,61 @@ text = "		You are player: \" + str(selfPlayerId) + \"
 		Last played by directional orientation: \" + getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + \"
 		Is on open turn: \" + str(isOnAnOpenTurn) + \""
 
-[node name="PlayCardsButton" type="Button" parent="."]
-offset_left = 200.0
-offset_top = 127.0
-offset_right = 351.0
-offset_bottom = 156.0
-disabled = true
-text = "Comfirm Play Cards"
-
-[node name="PassTurnButton" type="Button" parent="."]
-offset_left = 121.0
-offset_top = 127.0
-offset_right = 162.0
-offset_bottom = 156.0
-text = "Pass
-"
-
-[node name="AutoPlayToggle" type="CheckButton" parent="."]
-offset_left = -322.0
-offset_top = 29.0
-offset_right = -278.0
-offset_bottom = 53.0
-text = "AutoPlay"
-
 [node name="ForcePlayerPlayCardButton" type="Button" parent="."]
 offset_right = 337.0
 offset_bottom = 29.0
 text = "FORCE the current player to play turn as robot"
 
-[node name="SortCards" type="Button" parent="."]
-offset_left = -262.0
-offset_top = 58.0
-offset_right = -184.0
-offset_bottom = 87.0
-text = "Sort hand"
-
 [node name="RestartGameButton" type="Button" parent="."]
 offset_left = -302.0
 offset_top = 105.0
-offset_right = -294.0
-offset_bottom = 113.0
+offset_right = -241.0
+offset_bottom = 134.0
 disabled = true
 text = "Restart"
 
+[node name="GameButtonContainer" type="VBoxContainer" parent="."]
+offset_left = 210.0
+offset_top = 29.0
+offset_right = 361.0
+offset_bottom = 157.0
+
+[node name="AutoPlayToggle" type="CheckButton" parent="GameButtonContainer"]
+layout_mode = 2
+text = "AutoPlay"
+
+[node name="SortCards" type="Button" parent="GameButtonContainer"]
+layout_mode = 2
+text = "Sort hand"
+
+[node name="PassTurnButton" type="Button" parent="GameButtonContainer"]
+layout_mode = 2
+disabled = true
+text = "Pass
+"
+
+[node name="PlayCardsButton" type="Button" parent="GameButtonContainer"]
+layout_mode = 2
+disabled = true
+text = "Comfirm Play Cards"
+
+[node name="SoundSFX" type="Node2D" parent="."]
+
+[node name="cardSlideSFX" type="AudioStreamPlayer2D" parent="SoundSFX"]
+stream = ExtResource("3_c6qfu")
+
+[node name="cardPlacedSFX" type="AudioStreamPlayer2D" parent="SoundSFX"]
+stream = ExtResource("4_u5blp")
+
+[node name="cardDiscardedSFX" type="AudioStreamPlayer2D" parent="SoundSFX"]
+stream = ExtResource("5_h24x4")
+
 [connection signal="area_entered" from="DropArea" to="." method="_on_drop_area_area_entered"]
 [connection signal="area_exited" from="DropArea" to="." method="_on_drop_area_area_exited"]
-[connection signal="pressed" from="PlayCardsButton" to="." method="_on_play_cards_button_pressed"]
-[connection signal="pressed" from="PassTurnButton" to="." method="_on_pass_turn_button_pressed"]
-[connection signal="pressed" from="AutoPlayToggle" to="." method="_on_auto_play_toggle_pressed"]
-[connection signal="toggled" from="AutoPlayToggle" to="." method="_on_auto_play_toggle_toggled"]
 [connection signal="pressed" from="ForcePlayerPlayCardButton" to="." method="_on_button_pressed"]
-[connection signal="pressed" from="SortCards" to="." method="_on_sort_cards_pressed"]
 [connection signal="pressed" from="RestartGameButton" to="." method="_on_restart_game_button_pressed"]
+[connection signal="pressed" from="GameButtonContainer/AutoPlayToggle" to="." method="_on_auto_play_toggle_pressed"]
+[connection signal="toggled" from="GameButtonContainer/AutoPlayToggle" to="." method="_on_auto_play_toggle_toggled"]
+[connection signal="pressed" from="GameButtonContainer/SortCards" to="." method="_on_sort_cards_pressed"]
+[connection signal="pressed" from="GameButtonContainer/PassTurnButton" to="." method="_on_pass_turn_button_pressed"]
+[connection signal="pressed" from="GameButtonContainer/PlayCardsButton" to="." method="_on_play_cards_button_pressed"]
