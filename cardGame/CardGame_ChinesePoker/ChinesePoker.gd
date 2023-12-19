@@ -914,6 +914,14 @@ func distributeCards(data):
 
 
 
+func clearAllCardSelected():
+	for card in cardsSelectedToPlayList:
+		card.isSelected = false
+	cardsSelectedToPlayList = []
+	cardsSelectedToPlayComboOrdering = -1
+	cardsSelectedToPlayComboType = CardPlayedComboType.INVALID_COMBO
+	cardsSelectedToPlayQuintComboType = QuintComboType.NO_QUINT_COMBO
+
 
 var isSortedAscending = false
 
@@ -921,15 +929,9 @@ func handleReorganizingCardsOnHand(sortingButtonClickToToggleSortOrder=false): #
 	var cardsOnHandArr = CardsOnPlayersHands[selfPlayerDirectionalOrientation].values()
 	if(cardsOnHandArr.size() == 0):
 		return	
-	
 	#must clear the selected cards
 	#reset the cards back to its original position before they were select
-	for card in cardsSelectedToPlayList:
-		card.isSelected = false
-	cardsSelectedToPlayList = []
-	cardsSelectedToPlayComboOrdering = -1
-	cardsSelectedToPlayComboType = CardPlayedComboType.INVALID_COMBO
-	cardsSelectedToPlayQuintComboType = QuintComboType.NO_QUINT_COMBO
+	clearAllCardSelected()
 
 	if (sortingButtonClickToToggleSortOrder):
 		isSortedAscending = !isSortedAscending
@@ -952,7 +954,6 @@ func resetCardsOnHandDefaultPosition(cardsOnHandArr):
 	for card in cardsOnHandArr:
 		card.setCardRestSnapPos(Vector2(distance*counter+leftBound,initY))
 		card.z_index = counter+30
-		#card.get_node("Button").z_index = counter + 30
 		counter+=1
 
 @onready var cardSlide_SFX = 	$SoundSFX/cardSlideSFX
@@ -1046,6 +1047,8 @@ func _on_restart_game_button_pressed():
 #drag and drop select functionalities
 
 func handleOnCardIsSelected(card):
+	if(card == null):
+		return
 	handleCardSFX(CardAction.SELECTED)
 	if(!card.isSelected):
 		card.setCardRestSnapPos(card.restSnapPos + Vector2(0,-50))
@@ -1070,15 +1073,31 @@ func handleOnCardIsSelected(card):
 		playCardsButton.disabled = true
 
 
+@onready var cursorAreaSelector = $CursorAreaSelector
+
+
+func getTopCardOfCurrentMousePos():
+	var mousePos = get_global_mouse_position()
+
+	var cardList = CardsOnPlayersHands[selfPlayerDirectionalOrientation].values()
+	var foundClickedCards = []
+	for cardOnHand in cardList:
+		var rect = cardOnHand.cardController.get_global_rect()
+		if(rect.has_point((mousePos))):
+			foundClickedCards.push_back(cardOnHand)
+	var topCard = foundClickedCards.reduce(func(cardA,cardB): return cardA if cardA.z_index > cardB.z_index else cardB)
+	return topCard
 
 func handleOnCardDragStart(card):
-	print("I was clicked down")
-	handleOnCardIsSelected(card)
+	print('card getting clicked....')
+	var topCard = getTopCardOfCurrentMousePos()
+	handleOnCardIsSelected(topCard)
 	pass
 func handleOnCardDragEnd(card):
-	#note you can let go anywhere, it doesnt even have to be on the card and it will still register.
-	print("I was clicked let go")
+
+	# print("I was clicked let go")
 	pass
 func handleOnCardDragSelecting(card):
-	print("I was dragged and held")
+
+	# print("I was dragged and held")
 	pass

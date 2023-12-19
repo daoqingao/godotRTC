@@ -27,12 +27,16 @@ var selected = false
 var flippedUp = false; #anything at card front z-index 6 is up, 4 is down
 var restSnapPos:Vector2 = Vector2.ZERO;
 var isInDroppableArea = false
-@onready var animation = $FlipCardAnimation
 
-# @onready var cardSlide_SFX = $cardSlideSFX
-# @onready var cardPlaced_SFX = $cardPlacedSFX
-# @onready var cardDiscarded_SFX = $cardDiscardedSFX
 
+# @onready var cardCanvasLayer = $CardCL
+@onready var animation = 	 $FlipCardAnimation
+@onready var cardTextLabel = $CardTextLabel
+@onready var cardFront = 	 $CardFront
+@onready var cardBack =		 $CardBack
+
+@onready var cardCollision = $CardCollision
+@onready var cardController = $CardController
 
 #chinese poker related things
 var suit := ""
@@ -65,7 +69,7 @@ func initBTCardType(suit,rank,id): #this like shuffling the deck physically
 		print(cardImgPathStr)
 	# print(cardImgPathStr)
 	var cardImgTexture = load(cardImgPathStr)
-	$CardFront.texture = cardImgTexture
+	cardFront.texture = cardImgTexture
 
 func initBTCardOwner(isOwnedByCurrentPlayer,ownerPlayerId,directionOrientation,screenOrientation): #its like drawing the cards physically
 	self.isOwnedByCurrentPlayer = isOwnedByCurrentPlayer
@@ -86,24 +90,30 @@ func _ready():
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	$Label.text = getShortRankAndSuitString() + "z " + str(z_index)
+	cardTextLabel.text = getShortRankAndSuitString() + "z " + str(z_index) + "l" + str(visibility_layer)
 	pass
 
 
 func setCardRestSnapPos(pos,reason=-1):
+	var tweenTime = .2
+	if(reason==CardAction.DISTRIBUTED):
+		tweenTime = 1
 	var tween = get_tree().create_tween()
 	tween.tween_property(self,
 	"position",
-	pos,.25).set_trans(4)
+	pos,tweenTime).set_trans(4)
+
 	restSnapPos = pos
 	
-	return 	tween.tween_interval(.25)
+	# cardCanvasLayer.offset = pos
+	return 	tween.tween_interval(tweenTime)
 
 	#use tween to move the card to the restSnapPos
 
 
 
 func _to_string():
+	return getShortRankAndSuitString()
 	return "Card ID: %d, Suit: %s, Rank: %s, Is Owned by Player? %s (Player ID: %d), Orientation: %d" % [
 		id,
 		suit,
@@ -193,25 +203,29 @@ var isDragging = false
 func _on_control_gui_input(event):
 	# print(event)
 	if( event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and !event.pressed ): #this is mouse on release
-		print("mouse on release")
-		print(getShortRankAndSuitString())
-		# isDragging = false
-		# isDraggedEnd.emit(self)
-	if(event.is_action_pressed("leftClick")): #thi sis mouse on mouse down
-		print("mouse on mouse down")
-		print(getShortRankAndSuitString())
-		# isDragging = true
-		# isDraggedStart.emit(self)
-	if(event is InputEventMouseMotion): #on hover
+		# print("mouse on release")
+		# print(getShortRankAndSuitString())
+		isDragging = false
+		isDraggedEnd.emit(self)
 		pass
+	if(event.is_action_pressed("leftClick")): #thi sis mouse on mouse down
+		# print("mouse on mouse down")
+		# print(getShortRankAndSuitString())
+		isDragging = true
+		isDraggedStart.emit(self)
+	if(event is InputEventMouseMotion): #on hover
 		# print("mouse on hover")
 		# print(getShortRankAndSuitString())
-		# if(isDragging):
-			# isDraggingSelecting.emit(self)
-func on_click():
-	print("called to onclick function should only be called once")
-	print(getShortRankAndSuitString())
+		if(isDragging):
+			isDraggingSelecting.emit(self)
 
+
+
+# func _input(event):
+# 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+# 		if cardFront.get_rect().has_point(to_local(event.position)):
+# 			print(event.position)
+# 			print("A click!")
 
 # var click_all = false
 # var ignore_unclickable = true
@@ -228,3 +242,17 @@ func on_click():
 # 	print("what is this?")
 # 	pass # Replace with function body.
 # 2046808109
+
+
+# func _on_input_event(viewport, event, shape_idx):
+# 	#on click
+# 	if event is InputEventMouseButton:
+# 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+# 			print("shorttext is " + getShortRankAndSuitString())
+# 			viewport.set_input_as_handled()
+# 	pass # Replace with function body.
+
+
+# func _on_texture_button_pressed():
+# 	print("sss is " + getShortRankAndSuitString())
+# 	pass # Replace with function body.
