@@ -86,7 +86,7 @@ func _ready():
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	$Label.text = str(ownerPlayerId) + getDirectionOriEnumStr(directionOrientation) + getScreenOriEnumStr(screenOrientation) + str(id)
+	$Label.text = getShortRankAndSuitString() + "z " + str(z_index)
 	pass
 
 
@@ -169,30 +169,62 @@ func flipCardUp():
 	await animation.animation_finished
 	return animation
 
-func _input(event):
-	if(!isOwnedByCurrentPlayer):
-		return # not allowed to do anything with this card
-	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
-			selected = false
-			if(isInDroppableArea):
-				#you are dropped. sooo
-				isInDroppableArea = false
-				isPlayedSignal.emit(self)
-func _on_input_event(viewport, event, shape_idx):
-	if(!isOwnedByCurrentPlayer):
-		return # not allowed to do anything with this card
-	if event.is_action_pressed("leftClick"):
-		isSelectedSignal.emit(self)
-	if event.is_action_pressed("rightClick"):
-		flipCard()
+# func _input(event):
+# 	if(!isOwnedByCurrentPlayer):
+# 		return # not allowed to do anything with this card
+# 	if event is InputEventMouseButton:
+# 		if event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+# 			selected = false
+# 			if(isInDroppableArea):
+# 				#you are dropped. sooo
+# 				isInDroppableArea = false
+# 				isPlayedSignal.emit(self)
+
 
 signal isPlayedSignal(vars)
-signal isSelectedSignal(card)
+signal isSelectedSignal(card) #this is a click signal
+
+signal isDraggedStart(cards)
+signal isDraggingSelecting(cards)
+signal isDraggedEnd(cards)
 
 
+var isDragging = false
 func _on_control_gui_input(event):
-	if(event.is_action_pressed("leftClick")):
-		isSelectedSignal.emit(self)
-		print("got clicked")
-	pass # Replace with function body.
+	# print(event)
+	if( event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and !event.pressed ): #this is mouse on release
+		print("mouse on release")
+		print(getShortRankAndSuitString())
+		# isDragging = false
+		# isDraggedEnd.emit(self)
+	if(event.is_action_pressed("leftClick")): #thi sis mouse on mouse down
+		print("mouse on mouse down")
+		print(getShortRankAndSuitString())
+		# isDragging = true
+		# isDraggedStart.emit(self)
+	if(event is InputEventMouseMotion): #on hover
+		pass
+		# print("mouse on hover")
+		# print(getShortRankAndSuitString())
+		# if(isDragging):
+			# isDraggingSelecting.emit(self)
+func on_click():
+	print("called to onclick function should only be called once")
+	print(getShortRankAndSuitString())
+
+
+# var click_all = false
+# var ignore_unclickable = true
+# func _on_input_event(viewport, event, shape_idx):
+# 	print("mouse input from area 2d ")
+# 	print(getShortRankAndSuitString())
+
+# 	if event.is_action_pressed("leftClick"):
+# 		#get the intersection of the current mouse
+# 		# var shapes = get_world_2d().direct_space_state.intersect_point() # The last 'true' enables Area2D intersections, previous four values are all defaults
+# 		pass
+	#PRINT JUST GIVE UP LMAO	
+# func _on_is_dragged_select(cards):
+# 	print("what is this?")
+# 	pass # Replace with function body.
+# 2046808109

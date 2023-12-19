@@ -27,7 +27,7 @@ var playersSignalConnectedAndReadiedCount = -1
 
 
 func _ready():
-	get_tree().change_scene_to_file(LobbyScenePath)
+	#get_tree().change_scene_to_file(LobbyScenePath)
 	# get_tree().change_scene_to_file(ChinesePokerScenePath)
 
 
@@ -111,6 +111,7 @@ func hostStartGameInitChinesePoker():
 		print("all players are conneted, ready to start")
 		print("amount of players connected as humans: ",playersSignalConnectedAndReadiedCount)
 		pregeneratedSeed = randi() #this thing will ALWAYS BE THE SAME throughout the game
+		# pregeneratedSeed = 2046808109
 		propagateActionType.rpc(
 			ConnectionActionType.INIT,{
 			peerPlayers= propagatedPeerPlayerSize, #this can contain robots and humans

@@ -151,6 +151,9 @@ func _ready():
 	Gamedata.propagateActionToPeers.connect(handlePropagatedAction)
 	Gamedata.propagateActionType.rpc_id(Gamedata.HOST_ID,Gamedata.ConnectionActionType.PLAYER_SIGNAL_CONNECTED_AND_READIED,{})
 	restartButton.disabled = true
+
+
+
 	#stubbed data to init with 4 players
 
 	#TODO: !!!!!!!!!! REMOVE THIS WHEN MAKING MULTIPLAYER!!!!!!!!!!!!!!!!!!!!!!!
@@ -549,30 +552,8 @@ func checkIfIsAnOpenTurn():
 	# else:
 	# 	isOnAnOpenTurn = false
 	# return isOnAnOpenTurn
-func handleOnCardIsSelected(card):
-	handleCardSFX(CardAction.SELECTED)
-	if(!card.isSelected):
-		card.setCardRestSnapPos(card.restSnapPos + Vector2(0,-50))
-		cardsSelectedToPlayList.push_back(card)
-	else:
-		card.setCardRestSnapPos(card.restSnapPos + Vector2(0,50))
-		cardsSelectedToPlayList.erase(card)
-	print("selected card list",cardsSelectedToPlayList)
-	card.isSelected = !card.isSelected
 
 
-	var cardsComboAndOrderingData = getCardsListComboTypeAndOrdering(cardsSelectedToPlayList)
-	var comboCanBePlayedFlag = cardsComboAndOrderingData.comboCanBePlayedFlag
-	# playCardsButton.disabled = false if comboCanBePlayedFlag else true
-	print(comboCanBePlayedFlag)
-	if(comboCanBePlayedFlag):
-		playCardsButton.disabled = false
-		#set global variable to the cards selected to play
-		cardsSelectedToPlayComboType = cardsComboAndOrderingData.comboType
-		cardsSelectedToPlayComboOrdering = cardsComboAndOrderingData.comboOrdering
-		cardsSelectedToPlayQuintComboType = cardsComboAndOrderingData.quintComboType
-	else:
-		playCardsButton.disabled = true
 
 
 ####################### GAMEPLAY FUNCTIONS
@@ -824,13 +805,15 @@ func lerpCardsToCenter(cardsList,cardComboType):
 
 
 
-
 ####################### GAME INITIALIZATION FUNCTIONS
 func createBTCard():
 	var card = BTCard.instantiate()
 	add_child(card)
 	# card.isPlayed.connect(handleOnCardIsPlayed)
 	card.isSelectedSignal.connect(handleOnCardIsSelected)
+	card.isDraggedStart.connect(handleOnCardDragStart)
+	card.isDraggedEnd.connect(handleOnCardDragEnd)
+	card.isDraggingSelecting.connect(handleOnCardDragSelecting)
 	return card
 func startGame():
 	###init the card game
@@ -938,10 +921,19 @@ func handleReorganizingCardsOnHand(sortingButtonClickToToggleSortOrder=false): #
 	var cardsOnHandArr = CardsOnPlayersHands[selfPlayerDirectionalOrientation].values()
 	if(cardsOnHandArr.size() == 0):
 		return	
+	
+	#must clear the selected cards
+	#reset the cards back to its original position before they were select
+	for card in cardsSelectedToPlayList:
+		card.isSelected = false
+	cardsSelectedToPlayList = []
+	cardsSelectedToPlayComboOrdering = -1
+	cardsSelectedToPlayComboType = CardPlayedComboType.INVALID_COMBO
+	cardsSelectedToPlayQuintComboType = QuintComboType.NO_QUINT_COMBO
 
 	if (sortingButtonClickToToggleSortOrder):
 		isSortedAscending = !isSortedAscending
-	cardsOnHandArr.sort_custom(func(cardA, cardB): return ( getSingleComboOrdering([cardA]) < getSingleComboOrdering([cardB]) if isSortedAscending else getSingleComboOrdering([cardA]) > getSingleComboOrdering([cardB])))
+	cardsOnHandArr.sort_custom(func(cardA, cardB): return ( getSingleComboOrdering([cardA]) < getSingleComboOrdering([cardB]) if !isSortedAscending else getSingleComboOrdering([cardA]) > getSingleComboOrdering([cardB])))
 	
 	handleCardSFX(CardAction.SORTED)
 	print("sorted cards on hand",cardsOnHandArr.map(func(card): return card.getShortRankAndSuitString()))
@@ -959,7 +951,8 @@ func resetCardsOnHandDefaultPosition(cardsOnHandArr):
 	# var zIndexCounter = 0 #starting from idk from 0 to 13
 	for card in cardsOnHandArr:
 		card.setCardRestSnapPos(Vector2(distance*counter+leftBound,initY))
-		card.z_index = counter
+		card.z_index = counter+30
+		#card.get_node("Button").z_index = counter + 30
 		counter+=1
 
 @onready var cardSlide_SFX = 	$SoundSFX/cardSlideSFX
@@ -1048,3 +1041,44 @@ func _on_restart_game_button_pressed():
 
 
 
+
+
+#drag and drop select functionalities
+
+func handleOnCardIsSelected(card):
+	handleCardSFX(CardAction.SELECTED)
+	if(!card.isSelected):
+		card.setCardRestSnapPos(card.restSnapPos + Vector2(0,-50))
+		cardsSelectedToPlayList.push_back(card)
+	else:
+		card.setCardRestSnapPos(card.restSnapPos + Vector2(0,50))
+		cardsSelectedToPlayList.erase(card)
+	# print("selected card list",cardsSelectedToPlayList)
+	print("selected card list",cardsSelectedToPlayList.map(func(card): return card.getShortRankAndSuitString()))
+	card.isSelected = !card.isSelected
+	var cardsComboAndOrderingData = getCardsListComboTypeAndOrdering(cardsSelectedToPlayList)
+	var comboCanBePlayedFlag = cardsComboAndOrderingData.comboCanBePlayedFlag
+	# playCardsButton.disabled = false if comboCanBePlayedFlag else true
+	print(comboCanBePlayedFlag)
+	if(comboCanBePlayedFlag):
+		playCardsButton.disabled = false
+		#set global variable to the cards selected to play
+		cardsSelectedToPlayComboType = cardsComboAndOrderingData.comboType
+		cardsSelectedToPlayComboOrdering = cardsComboAndOrderingData.comboOrdering
+		cardsSelectedToPlayQuintComboType = cardsComboAndOrderingData.quintComboType
+	else:
+		playCardsButton.disabled = true
+
+
+
+func handleOnCardDragStart(card):
+	print("I was clicked down")
+	handleOnCardIsSelected(card)
+	pass
+func handleOnCardDragEnd(card):
+	#note you can let go anywhere, it doesnt even have to be on the card and it will still register.
+	print("I was clicked let go")
+	pass
+func handleOnCardDragSelecting(card):
+	print("I was dragged and held")
+	pass
