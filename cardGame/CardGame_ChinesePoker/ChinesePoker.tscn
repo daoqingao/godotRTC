@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://bxuthfgtaurup"]
+[gd_scene load_steps=8 format=3 uid="uid://bxuthfgtaurup"]
 
 [ext_resource type="Script" path="res://cardGame/CardGame_ChinesePoker/ChinesePoker.gd" id="1_vvo47"]
 [ext_resource type="PackedScene" uid="uid://uyybxckd7n4u" path="res://cardGame/CardGame_ChinesePoker/BTPlayerAvatar.tscn" id="2_5u8i0"]
@@ -8,6 +8,9 @@
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_67l80"]
 size = Vector2(40, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kr7pm"]
+size = Vector2(1270, 53.333)
 
 [node name="ChinesePoker" type="Node2D"]
 script = ExtResource("1_vvo47")
@@ -133,6 +136,13 @@ stream = ExtResource("4_u5blp")
 [node name="cardDiscardedSFX" type="AudioStreamPlayer2D" parent="SoundSFX"]
 stream = ExtResource("5_h24x4")
 
+[node name="AreaTriggerToPlay" type="Area2D" parent="."]
+position = Vector2(9, 218)
+
+[node name="CollisionToPlay" type="CollisionShape2D" parent="AreaTriggerToPlay"]
+position = Vector2(-1, -125.333)
+shape = SubResource("RectangleShape2D_kr7pm")
+
 [connection signal="area_entered" from="DropArea" to="." method="_on_drop_area_area_entered"]
 [connection signal="area_exited" from="DropArea" to="." method="_on_drop_area_area_exited"]
 [connection signal="pressed" from="ForcePlayerPlayCardButton" to="." method="_on_button_pressed"]
@@ -142,3 +152,5 @@ stream = ExtResource("5_h24x4")
 [connection signal="pressed" from="GameButtonContainer/SortCards" to="." method="_on_sort_cards_pressed"]
 [connection signal="pressed" from="GameButtonContainer/PassTurnButton" to="." method="_on_pass_turn_button_pressed"]
 [connection signal="pressed" from="GameButtonContainer/PlayCardsButton" to="." method="_on_play_cards_button_pressed"]
+[connection signal="mouse_entered" from="AreaTriggerToPlay" to="." method="_on_area_trigger_to_play_mouse_entered"]
+[connection signal="mouse_exited" from="AreaTriggerToPlay" to="." method="_on_area_trigger_to_play_mouse_exited"]

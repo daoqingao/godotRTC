@@ -48,9 +48,22 @@ var ownerPlayerId = -1
 var directionOrientation = 0
 var screenOrientation = -1
 
-#card movement related things
-
 var isSelected = false
+
+
+# var beforeLerpingToMousePos = Vector2.ZERO
+var lerpToMousePos = Vector2.ZERO
+var isLerpingToMouse = false
+
+
+var selectedPos = Vector2.ZERO
+var unSelectedPos = Vector2.ZERO
+func getSelectedPos():
+	return selectedPos
+	return self.global_position + Vector2(0,-50)
+func getUnSelectedPos():
+	return unSelectedPos
+	return self.global_position + Vector2(0,50)
 
 func initBTCardType(suit,rank,id): #this like shuffling the deck physically
 	self.suit = suit
@@ -71,12 +84,16 @@ func initBTCardType(suit,rank,id): #this like shuffling the deck physically
 	var cardImgTexture = load(cardImgPathStr)
 	cardFront.texture = cardImgTexture
 
+
+
 func initBTCardOwner(isOwnedByCurrentPlayer,ownerPlayerId,directionOrientation,screenOrientation): #its like drawing the cards physically
 	self.isOwnedByCurrentPlayer = isOwnedByCurrentPlayer
 	self.ownerPlayerId = ownerPlayerId
 	self.directionOrientation = directionOrientation
 	self.screenOrientation = screenOrientation
 func _physics_process(delta):
+	if(isLerpingToMouse):
+		global_position=lerp(global_position,get_global_mouse_position(),lerpSpeed * delta)
 	# isOwner = $MultiplayerSynchronizer.get_multiplayer_authority() == multiplayer.get_unique_id()
 	# isOwnedByCurrentPlayer = true
 	# if selected and isOwnedByCurrentPlayer:
@@ -97,6 +114,8 @@ func _process(delta):
 func setCardRestSnapPos(pos,reason=-1):
 	var tweenTime = .2
 	if(reason==CardAction.DISTRIBUTED):
+		self.selectedPos = pos + Vector2(0,-50)
+		self.unSelectedPos = pos + Vector2(0,0)
 		tweenTime = 1
 	var tween = get_tree().create_tween()
 	tween.tween_property(self,
@@ -191,68 +210,30 @@ func flipCardUp():
 # 				isPlayedSignal.emit(self)
 
 
-signal isPlayedSignal(vars)
-signal isSelectedSignal(card) #this is a click signal
-
 signal isDraggedStart(cards)
 signal isDraggingSelecting(cards)
 signal isDraggedEnd(cards)
 
+signal triggerMouseEnterTopOfCard(cards)
+signal triggerMouseExitTopOfCard(cards)
 
-var isDragging = false
 func _on_control_gui_input(event):
 	# print(event)
+
+	#what is being clicked here does not necessarily mean its the cards being clicked due to 
+	#due to godot sucking 
 	if( event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and !event.pressed ): #this is mouse on release
-		# print("mouse on release")
-		# print(getShortRankAndSuitString())
-		isDragging = false
 		isDraggedEnd.emit(self)
-		pass
 	if(event.is_action_pressed("leftClick")): #thi sis mouse on mouse down
-		# print("mouse on mouse down")
-		# print(getShortRankAndSuitString())
-		isDragging = true
 		isDraggedStart.emit(self)
 	if(event is InputEventMouseMotion): #on hover
-		# print("mouse on hover")
-		# print(getShortRankAndSuitString())
-		if(isDragging):
-			isDraggingSelecting.emit(self)
+		isDraggingSelecting.emit(self)
+
+		pass
+#when you drag the cards a bit above the card it will be lerped to mouse to be readied to be played
+func _on_area_trigger_to_play_mouse_entered():
+	pass # Replace with function body.
 
 
-
-# func _input(event):
-# 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-# 		if cardFront.get_rect().has_point(to_local(event.position)):
-# 			print(event.position)
-# 			print("A click!")
-
-# var click_all = false
-# var ignore_unclickable = true
-# func _on_input_event(viewport, event, shape_idx):
-# 	print("mouse input from area 2d ")
-# 	print(getShortRankAndSuitString())
-
-# 	if event.is_action_pressed("leftClick"):
-# 		#get the intersection of the current mouse
-# 		# var shapes = get_world_2d().direct_space_state.intersect_point() # The last 'true' enables Area2D intersections, previous four values are all defaults
-# 		pass
-	#PRINT JUST GIVE UP LMAO	
-# func _on_is_dragged_select(cards):
-# 	print("what is this?")
-# 	pass # Replace with function body.
-# 2046808109
-
-
-# func _on_input_event(viewport, event, shape_idx):
-# 	#on click
-# 	if event is InputEventMouseButton:
-# 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-# 			print("shorttext is " + getShortRankAndSuitString())
-# 			viewport.set_input_as_handled()
-# 	pass # Replace with function body.
-
-
-# func _on_texture_button_pressed():
-# 	print("sss is " + getShortRankAndSuitString())
-# 	pass # Replace with function body.
+func _on_area_trigger_to_play_mouse_exited():
+	pass # Replace with function body.

@@ -307,12 +307,16 @@ func enablePassButtonOnYourTurn():
 		passTurnButton.disabled = true
 
 func _on_play_cards_button_pressed():
+	if(!cardsSelectedCanBePlayed):
+		print("cant play the cards invalid hand")
+		# handleReorganizingCardsOnHand(false)
+		return false #invalid hand selected cant be played
 	if(gameIsFinished):
 		print("game is finished")
-		return
+		return false
 	if(!currentTurnDirectionalOrientation == selfPlayerDirectionalOrientation):
 		print("not your turn")
-		return
+		return false
 	Gamedata.propagateActionType.rpc(Gamedata.ConnectionActionType.PROPAGATE_GAME_ACTION,{
 		propagatedCardsPlayedByPlayerId = Gamedata.playerId,
 		propagatedCardsPlayedByDirectionalOrientation = selfPlayerDirectionalOrientation,
@@ -328,7 +332,7 @@ func _on_play_cards_button_pressed():
 	cardsSelectedToPlayList = []
 	playCardsButton.disabled = true
  
-	pass # Replace with function body.
+	return true
 
 func _on_pass_turn_button_pressed():
 	if(gameIsFinished):
@@ -810,10 +814,13 @@ func createBTCard():
 	var card = BTCard.instantiate()
 	add_child(card)
 	# card.isPlayed.connect(handleOnCardIsPlayed)
-	card.isSelectedSignal.connect(handleOnCardIsSelected)
+	# card.isSelectedSignal.connect(handleOnCardIsSelected)
+
 	card.isDraggedStart.connect(handleOnCardDragStart)
 	card.isDraggedEnd.connect(handleOnCardDragEnd)
 	card.isDraggingSelecting.connect(handleOnCardDragSelecting)
+
+	
 	return card
 func startGame():
 	###init the card game
@@ -904,6 +911,7 @@ func distributeCards(data):
 			card.flipCardDown()
 
 		else: #you do own the card so lets put it on the bottom!!!
+			# card.setCardRestSnapPos(posAvatarSnapPos,CardAction.DISTRIBUTED)
 			# card.setCardRestSnapPos(Vector2(initX+distance*counter+offSetX,initY))
 			# card.restSnapPos = Vector2(initX+distance*counter+offSetX,initY)
 			card.flipCardUp()
@@ -952,7 +960,7 @@ func resetCardsOnHandDefaultPosition(cardsOnHandArr):
 	# var rightBound = -distance * (numCards-1) / 2 
 	# var zIndexCounter = 0 #starting from idk from 0 to 13
 	for card in cardsOnHandArr:
-		card.setCardRestSnapPos(Vector2(distance*counter+leftBound,initY))
+		card.setCardRestSnapPos(Vector2(distance*counter+leftBound,initY),CardAction.DISTRIBUTED)
 		card.z_index = counter+30
 		counter+=1
 
@@ -1046,23 +1054,26 @@ func _on_restart_game_button_pressed():
 
 #drag and drop select functionalities
 
+var cardsSelectedCanBePlayed = false
+
+
+
 func handleOnCardIsSelected(card):
 	if(card == null):
 		return
 	handleCardSFX(CardAction.SELECTED)
 	if(!card.isSelected):
-		card.setCardRestSnapPos(card.restSnapPos + Vector2(0,-50))
+		card.setCardRestSnapPos(card.getSelectedPos())
 		cardsSelectedToPlayList.push_back(card)
 	else:
-		card.setCardRestSnapPos(card.restSnapPos + Vector2(0,50))
+		card.setCardRestSnapPos(card.getUnSelectedPos())
 		cardsSelectedToPlayList.erase(card)
 	# print("selected card list",cardsSelectedToPlayList)
 	print("selected card list",cardsSelectedToPlayList.map(func(card): return card.getShortRankAndSuitString()))
 	card.isSelected = !card.isSelected
 	var cardsComboAndOrderingData = getCardsListComboTypeAndOrdering(cardsSelectedToPlayList)
 	var comboCanBePlayedFlag = cardsComboAndOrderingData.comboCanBePlayedFlag
-	# playCardsButton.disabled = false if comboCanBePlayedFlag else true
-	print(comboCanBePlayedFlag)
+	cardsSelectedCanBePlayed = comboCanBePlayedFlag
 	if(comboCanBePlayedFlag):
 		playCardsButton.disabled = false
 		#set global variable to the cards selected to play
@@ -1073,12 +1084,8 @@ func handleOnCardIsSelected(card):
 		playCardsButton.disabled = true
 
 
-@onready var cursorAreaSelector = $CursorAreaSelector
-
-
-func getTopCardOfCurrentMousePos():
+func getTopZIndexCardOfCurrentMousePos():
 	var mousePos = get_global_mouse_position()
-
 	var cardList = CardsOnPlayersHands[selfPlayerDirectionalOrientation].values()
 	var foundClickedCards = []
 	for cardOnHand in cardList:
@@ -1088,16 +1095,179 @@ func getTopCardOfCurrentMousePos():
 	var topCard = foundClickedCards.reduce(func(cardA,cardB): return cardA if cardA.z_index > cardB.z_index else cardB)
 	return topCard
 
+
+var isDraggingACard = false
+
 func handleOnCardDragStart(card):
-	print('card getting clicked....')
-	var topCard = getTopCardOfCurrentMousePos()
-	handleOnCardIsSelected(topCard)
+	isDraggingACard = true
+	handleDraggedCardPlay(DRAGGED_CARD_DELTA.CLICK)
 	pass
 func handleOnCardDragEnd(card):
+	isDraggingACard = false
 
-	# print("I was clicked let go")
+	handleDraggedCardPlay(DRAGGED_CARD_DELTA.DROPPED)
+
 	pass
 func handleOnCardDragSelecting(card):
-
-	# print("I was dragged and held")
+	if(!isDraggingACard):
+		return
+	handleDraggedCardPlay(DRAGGED_CARD_DELTA.HOLDING)
 	pass
+func _on_area_trigger_to_play_mouse_entered():
+	handleDraggedCardPlay(DRAGGED_CARD_DELTA.TRIGGERED)
+	pass
+
+#there are only 4 states. actions.
+enum DRAGGED_CARD_DELTA {
+	 CLICK,
+	 HOLDING,
+	 TRIGGERED,
+	 DROPPED,
+	 NOTHING
+}
+
+enum DRAGGED_CARD_STATE {
+	SELECTED, #init click -> selecteCardOnCursor
+	DRAGGING_READY_TO_BE_DESELECTED_OR_TRIGGERED, #clicking on a selected card, ready to be deselected
+
+	SELECTED_CLICK_READY_TO_BE_DESELECTED,
+	SELECTED_CLICK_HOLDING_READY_TO_BE_DESELECTED_OR_TRIGGERED,
+
+	CLICK_HOLDING, #dragging NOTE: TO BE IMPLEMENTED
+	CLICK_HOLDING_TRIGGERED_TO_LERP, #lerpAllSelectedCardsToCursor()
+	NOTHING, #ON NOTHING< THIS SHOULD RESET EVERYTHING BACK TO DEFAULT VALUES, MEANING CLEANING THE CARDS SELECTED LIST AS WELL
+}
+
+var currentState = DRAGGED_CARD_STATE.NOTHING
+
+var makingDragOnlyHandledOnce = false
+var lastStateDelta = DRAGGED_CARD_DELTA.NOTHING
+func handleDraggedCardPlay(delta):
+	if(delta == DRAGGED_CARD_DELTA.HOLDING and lastStateDelta == DRAGGED_CARD_DELTA.HOLDING):
+		return 
+	lastStateDelta = delta
+	print("new delta action is ",enumToStr(DRAGGED_CARD_DELTA,delta))
+	# return
+	
+	if(currentState ==DRAGGED_CARD_STATE.NOTHING and delta == DRAGGED_CARD_DELTA.CLICK):
+		onlySelectUnselectedCards()
+		currentState = DRAGGED_CARD_STATE.SELECTED
+		return
+
+	if(currentState == DRAGGED_CARD_STATE.SELECTED and delta == DRAGGED_CARD_DELTA.DROPPED):
+		# onlyDeselectSelectedCards()
+		currentState = DRAGGED_CARD_STATE.NOTHING
+		return
+
+	if(currentState == DRAGGED_CARD_STATE.SELECTED and delta == DRAGGED_CARD_DELTA.HOLDING):
+		currentState = DRAGGED_CARD_STATE.DRAGGING_READY_TO_BE_DESELECTED_OR_TRIGGERED
+		return
+	if(currentState == DRAGGED_CARD_STATE.DRAGGING_READY_TO_BE_DESELECTED_OR_TRIGGERED and delta == DRAGGED_CARD_DELTA.DROPPED):
+		# onlyDeselectSelectedCards()
+		currentState = DRAGGED_CARD_STATE.NOTHING
+		return
+
+	if(currentState == DRAGGED_CARD_STATE.DRAGGING_READY_TO_BE_DESELECTED_OR_TRIGGERED and delta == DRAGGED_CARD_DELTA.TRIGGERED):
+		lerpAllSelectedCardsToCursor()
+		currentState = DRAGGED_CARD_STATE.CLICK_HOLDING_TRIGGERED_TO_LERP
+		return
+
+
+	if(currentState == DRAGGED_CARD_STATE.CLICK_HOLDING_TRIGGERED_TO_LERP and delta == DRAGGED_CARD_DELTA.DROPPED):
+		print("lerping back to original position")
+		disableLerpForAllSelectedCards()
+		attemptToPlayLerpedCards() #both out comes you will reset the state to nothing
+		currentState = DRAGGED_CARD_STATE.NOTHING #dragging the cards and now lerping
+		resetStateToSelectedPos()
+		return
+	return 
+
+func resetStateToUnselected():
+	for card in cardsSelectedToPlayList:
+		card.setCardRestSnapPos(card.getUnSelectedPos())
+		card.isLerpingToMouse = false
+		card.isSelected = false
+	cardsSelectedToPlayList = []
+
+func resetStateToSelectedPos():
+	for card in cardsSelectedToPlayList:
+		card.setCardRestSnapPos(card.getSelectedPos())
+		card.isLerpingToMouse = false
+
+func attemptToPlayLerpedCards():
+	var isAttemptToPlayLerpedCardsSuccess = _on_play_cards_button_pressed()
+	return isAttemptToPlayLerpedCardsSuccess
+
+func lerpAllSelectedCardsToCursor():
+	for card in cardsSelectedToPlayList:
+		card.isLerpingToMouse = true
+		# isDraggingACard = true
+
+
+var lastSelected = null
+func onlyDeselectSelectedCards():
+	var topCard = getTopZIndexCardOfCurrentMousePos()
+	# if(topCard != null and !topCard.isSelected): #only allow cards that are selected to be unselected
+		# return
+	# if(lastSelected != null && lastSelected.id == topCard.id):
+		# return
+	handleOnCardIsSelected(topCard)
+func onlySelectUnselectedCards():
+	var topCard = getTopZIndexCardOfCurrentMousePos()
+	# if(topCard != null  and topCard.isSelected): #only allow the cards that are unselected to be selected
+		# return
+	# lastSelected = topCard
+	handleOnCardIsSelected(topCard)
+	# isDraggingACard = true
+
+func toggleSelectedCard():
+	var topCard = getTopZIndexCardOfCurrentMousePos()
+	handleOnCardIsSelected(topCard)
+
+func disableLerpForAllSelectedCards():
+	for card in cardsSelectedToPlayList:
+		card.isLerpingToMouse = false
+# var hasEnterAreaTriggerToPlay = false
+# func _on_area_trigger_to_play_mouse_entered():
+# 	print("area enter")
+# 	#check if any of the cards are being dragged..
+# 	#if any of the cards are beging initially dragged. set all of them to be dragged
+# 	# var containsCardsBeingDragged = cardsSelectedToPlayList.filter(func(card): return card.isDragging).size() > 0
+# 	# for card in cardsSelectedToPlayList:
+# 	# 	print(card.isDragging)
+# 	if(hasEnterAreaTriggerToPlay):
+# 		print("cancel lerping play")
+# 		isDraggingACard = false
+# 		handleReorganizingCardsOnHand()
+# 		cancelDraggedCardBeingSelected()
+# 	# print( cardsSelectedToPlayList)
+# 	# print(containsCardsBeingDragged)
+# 	if(isDraggingACard):
+# 		hasEnterAreaTriggerToPlay = true
+# 		print("lerping")
+# 		for card in cardsSelectedToPlayList:
+# 			card.beforeLerpingToMousePos = card.global_position
+# 			card.isLerpingToMouse = true
+
+# 	pass # Replace with function body.
+# # func _on_area_trigger_to_play_mouse_exited():
+# # 	pass # Replace with function body.
+
+
+# func handleDroppedCards():
+# 	#if it is not your turn... then you cannot drag and drop
+# 	cancelDraggedCardBeingSelected()
+# 	print("attempting to make lerping play, it can fail or no fail but it will reorganize hand in the end and no long lerp")
+# 	_on_play_cards_button_pressed()
+
+
+# #revert them back to their original position
+# func cancelDraggedCardBeingSelected():
+# 	for card in cardsSelectedToPlayList:
+# 		card.isLerpingToMouse = false
+# 		card.setCardRestSnapPos(card.beforeLerpingToMousePos)
+
+
+
+
+# okay we have states

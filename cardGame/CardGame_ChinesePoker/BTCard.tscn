@@ -146,7 +146,7 @@ _data = {
 size = Vector2(147.333, 194.667)
 
 [node name="BTCards" type="Area2D"]
-position = Vector2(9, -4)
+position = Vector2(114, 139)
 scale = Vector2(1.5, 1.5)
 script = ExtResource("1_7ry17")
 
@@ -185,5 +185,4 @@ text = "card data here"
 z_index = 5
 texture = ExtResource("3_cxmq6")
 
-[connection signal="input_event" from="." to="." method="_on_input_event"]
 [connection signal="gui_input" from="CardController" to="." method="_on_control_gui_input"]
