@@ -1150,12 +1150,13 @@ func handleDraggedCardPlay(delta):
 	# return
 	
 	if(currentState ==DRAGGED_CARD_STATE.NOTHING and delta == DRAGGED_CARD_DELTA.CLICK):
-		onlySelectUnselectedCards()
+		toggleSelectedCard()
 		currentState = DRAGGED_CARD_STATE.SELECTED
 		return
 
 	if(currentState == DRAGGED_CARD_STATE.SELECTED and delta == DRAGGED_CARD_DELTA.DROPPED):
 		# onlyDeselectSelectedCards()
+		unselecteCardsReadyToBeUnselected()
 		currentState = DRAGGED_CARD_STATE.NOTHING
 		return
 
@@ -1164,10 +1165,12 @@ func handleDraggedCardPlay(delta):
 		return
 	if(currentState == DRAGGED_CARD_STATE.DRAGGING_READY_TO_BE_DESELECTED_OR_TRIGGERED and delta == DRAGGED_CARD_DELTA.DROPPED):
 		# onlyDeselectSelectedCards()
+		unselecteCardsReadyToBeUnselected()
 		currentState = DRAGGED_CARD_STATE.NOTHING
 		return
 
 	if(currentState == DRAGGED_CARD_STATE.DRAGGING_READY_TO_BE_DESELECTED_OR_TRIGGERED and delta == DRAGGED_CARD_DELTA.TRIGGERED):
+		selectedCardsReadyToBeUnselected= []
 		lerpAllSelectedCardsToCursor()
 		currentState = DRAGGED_CARD_STATE.CLICK_HOLDING_TRIGGERED_TO_LERP
 		return
@@ -1220,9 +1223,19 @@ func onlySelectUnselectedCards():
 	handleOnCardIsSelected(topCard)
 	# isDraggingACard = true
 
+
+var selectedCardsReadyToBeUnselected = []
 func toggleSelectedCard():
 	var topCard = getTopZIndexCardOfCurrentMousePos()
+	if(topCard != null and topCard.isSelected): #only allow cards that are selected to be unselected
+		selectedCardsReadyToBeUnselected.push_back(topCard)
+		return
 	handleOnCardIsSelected(topCard)
+
+func unselecteCardsReadyToBeUnselected():
+	for card in selectedCardsReadyToBeUnselected:
+		handleOnCardIsSelected(card)
+	selectedCardsReadyToBeUnselected = []
 
 func disableLerpForAllSelectedCards():
 	for card in cardsSelectedToPlayList:

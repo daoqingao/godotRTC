@@ -116,7 +116,7 @@ func setCardRestSnapPos(pos,reason=-1):
 	if(reason==CardAction.DISTRIBUTED):
 		self.selectedPos = pos + Vector2(0,-50)
 		self.unSelectedPos = pos + Vector2(0,0)
-		tweenTime = 1
+		tweenTime = .25
 	var tween = get_tree().create_tween()
 	tween.tween_property(self,
 	"position",
