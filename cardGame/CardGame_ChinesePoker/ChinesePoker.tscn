@@ -26,16 +26,22 @@ offset_bottom = 360.0
 mouse_filter = 1
 color = Color(0.121569, 0.121569, 0.121569, 1)
 
+[node name="PlayedCardsPos" type="Node2D" parent="."]
+position = Vector2(-138, -220)
+
 [node name="DropArea" type="Area2D" parent="."]
+visible = false
 position = Vector2(-82, -271)
 scale = Vector2(4.56309, 2.5735)
 
 [node name="DropColor" type="ColorRect" parent="DropArea"]
+visible = false
 offset_right = 40.0
 offset_bottom = 40.0
 mouse_filter = 1
 
 [node name="DropCollision" type="CollisionShape2D" parent="DropArea"]
+visible = false
 position = Vector2(20, 20)
 shape = SubResource("RectangleShape2D_67l80")
 
@@ -45,18 +51,19 @@ position = Vector2(19.9426, 19.8174)
 [node name="PlayerAvatarsCollection" type="Node2D" parent="."]
 
 [node name="BtPlayerAvatarBot" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
-position = Vector2(-26, 127)
+position = Vector2(-506, 62)
 
 [node name="BtPlayerAvatarLeft" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
-position = Vector2(-544, -220)
+position = Vector2(-514, -188)
 
 [node name="BtPlayerAvatarTop" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
-position = Vector2(569, -220)
+position = Vector2(539, -188)
 
 [node name="BtPlayerAvatarRight" parent="PlayerAvatarsCollection" instance=ExtResource("2_5u8i0")]
-position = Vector2(569, 84)
+position = Vector2(539, 13)
 
 [node name="TestRelated" type="Node2D" parent="."]
+visible = false
 
 [node name="DebugLog" type="Label" parent="TestRelated"]
 offset_left = -627.0

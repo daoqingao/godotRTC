@@ -147,7 +147,7 @@ size = Vector2(147.333, 194.667)
 
 [node name="BTCards" type="Area2D"]
 position = Vector2(114, 139)
-scale = Vector2(1.5, 1.5)
+scale = Vector2(1.25, 1.25)
 script = ExtResource("1_7ry17")
 
 [node name="CardController" type="Control" parent="."]
@@ -179,7 +179,6 @@ offset_top = -108.667
 offset_right = 81.6667
 offset_bottom = -85.6667
 scale = Vector2(0.437062, 0.386926)
-text = "card data here"
 
 [node name="CardBack" type="Sprite2D" parent="."]
 z_index = 5

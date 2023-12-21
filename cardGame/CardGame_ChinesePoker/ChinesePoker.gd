@@ -82,7 +82,9 @@ enum QuintComboType {
 	NO_QUINT_COMBO,
 }
 
-@onready var PLAYED_CARDS_SNAP_POSITION = $DropArea/DropSnapPos.global_position
+# @onready var PLAYED_CARDS_SNAP_POSITION = $DropArea/DropSnapPos.global_position
+@onready var PLAYED_CARDS_SNAP_POSITION = $PlayedCardsPos.global_position
+
 
 ################################################# DATA THAT ARE RELATED TO THE GAME AND SHOULD BE THE SAME ACROSS ALL INSTANCE
 var allPlayerIdList = []
@@ -194,10 +196,7 @@ func handlePropagatedAction(connectionActionType, propagatedData, propagatedGame
 func handlePropagatedTurnPlayed(propagatedData):
 
 	var lastAnimation = null
-	for card in propagatedData.propagatedLASTLASTCardsPlayedIdList.map(func(cardId): return allCards[cardId]):
-		# card.restSnapPos = PLAYED_CARDS_SNAP_POSITION
-		lastAnimation = card.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION+Vector2(-200,0)).finished
-		card.flipCardDown()
+
 	if(lastAnimation != null):
 		# handleCardSFX(CardAction.DISCARDED)
 		await lastAnimation
@@ -214,7 +213,10 @@ func handlePropagatedTurnPlayed(propagatedData):
 	_log(getDirectionOriEnumStr(cardsLastPlayedDirectionalOrientation) + " played " + getEnumStr(CardPlayedComboType,cardsLastPlayedComboType) + " " + str(cardsLastPlayedComboOrdering) + " " 
 	+ getEnumStr(QuintComboType,cardsLastPlayedQuintComboType) + ": " + str(cardsLastPlayedList.map(func(card): return card.getShortRankAndSuitString())) + ""
 	)
-	
+	for card in propagatedData.propagatedLASTLASTCardsPlayedIdList.map(func(cardId): return allCards[cardId]):
+		# card.restSnapPos = PLAYED_CARDS_SNAP_POSITION
+		lastAnimation = card.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION+Vector2(-200,0)).finished
+		card.flipCardDown()
 	#if you played a card. those ares dont belong to you anymore
 
 	var yourCardsOnHandData = CardsOnPlayersHands[cardsLastPlayedDirectionalOrientation]
@@ -296,6 +298,7 @@ func handlePropagatedInit(propagatedData):
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(currentTurnDirectionalOrientation) #this is the next player turn
 	currentTurnDirectionalOrientation = cycleToNextPlayerTurn(currentTurnDirectionalOrientation) #this is the next player turn
 	restartButton.disabled = false
+	# randomizePlayerIcons():
 ####################### Event Handlers For Buttons On UI
 
 func enablePassButtonOnYourTurn():
@@ -541,7 +544,10 @@ func cycleToNextPlayerTurn(directionalOrientation):
 
 	lastTurnAvatar.modulate = Color(1,1,1,1)
 	currentTurnAvatar.modulate = Color(1,1,0.5,0.5)
-	
+	var mat = screenOriToPlayerAvatar[selfDirectionOriToScreenOri[nextPlayerTurn]].get_node("PlayerSprite")
+	mat.material.set_blend_mode(1)
+
+	# screenOriToPlayerAvatar[getLastScreenOri].get_node("PlayerSprite").material.set_blend_mode(0)
 	return nextPlayerTurn
 
 func checkIfIsAnOpenTurn():
@@ -735,13 +741,14 @@ func getQuintComboOrdering(cardsList):
 var numCardsZIndexCounter = 3
 func lerpCardsToCenter(cardsList,cardComboType):
 	#flip cards up
+	numCardsZIndexCounter += 5
 	if(cardComboType == CardPlayedComboType.SINGLE):
 		var card = cardsList[0]
 		card.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION)
 		card.z_index = numCardsZIndexCounter
-		numCardsZIndexCounter+=1
 		card.flipCardUp()
 		handleCardSFX(CardAction.PLAYED)
+		card.scaleCardBackToOriginalSize()
 		return
 	elif(cardComboType == CardPlayedComboType.DOUBLE):
 		var card1 = cardsList[0]
@@ -749,11 +756,12 @@ func lerpCardsToCenter(cardsList,cardComboType):
 		card1.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION)
 		card2.setCardRestSnapPos(PLAYED_CARDS_SNAP_POSITION + Vector2(100,0))
 		card1.z_index = numCardsZIndexCounter
-		card2.z_index = numCardsZIndexCounter
-		numCardsZIndexCounter += 1
+		card2.z_index = numCardsZIndexCounter + 1
 		card1.flipCardUp()
 		card2.flipCardUp()
 		handleCardSFX(CardAction.PLAYED)
+		card1.scaleCardBackToOriginalSize()
+		card2.scaleCardBackToOriginalSize()
 		return
 	elif(cardComboType == CardPlayedComboType.QUINT):
 		var card1 = cardsList[0]
@@ -775,16 +783,21 @@ func lerpCardsToCenter(cardsList,cardComboType):
 		handleCardSFX(CardAction.QUINT_PLAYED)
 
 		card1.z_index = numCardsZIndexCounter
-		card2.z_index = numCardsZIndexCounter
-		card3.z_index = numCardsZIndexCounter
-		card4.z_index = numCardsZIndexCounter
-		card5.z_index = numCardsZIndexCounter
-		numCardsZIndexCounter +=1
+		card2.z_index = numCardsZIndexCounter + 1
+		card3.z_index = numCardsZIndexCounter + 2
+		card4.z_index = numCardsZIndexCounter + 3
+		card5.z_index = numCardsZIndexCounter + 4
 		card1.flipCardUp()
 		card2.flipCardUp()
 		card3.flipCardUp()
 		card4.flipCardUp()
 		card5.flipCardUp()
+
+		card1.scaleCardBackToOriginalSize()
+		card2.scaleCardBackToOriginalSize()
+		card3.scaleCardBackToOriginalSize()
+		card4.scaleCardBackToOriginalSize()
+		card5.scaleCardBackToOriginalSize()
 		return
 	else:
 		print("error, card combo type not found")
@@ -952,7 +965,7 @@ func handleReorganizingCardsOnHand(sortingButtonClickToToggleSortOrder=false): #
 func resetCardsOnHandDefaultPosition(cardsOnHandArr):
 	var initY = 300
 	var counter = 0
-	var distance = 1280/13
+	var distance = 1280/15
 
 	var numCards = cardsOnHandArr.size()
 
@@ -1174,8 +1187,6 @@ func handleDraggedCardPlay(delta):
 		lerpAllSelectedCardsToCursor()
 		currentState = DRAGGED_CARD_STATE.CLICK_HOLDING_TRIGGERED_TO_LERP
 		return
-
-
 	if(currentState == DRAGGED_CARD_STATE.CLICK_HOLDING_TRIGGERED_TO_LERP and delta == DRAGGED_CARD_DELTA.DROPPED):
 		print("lerping back to original position")
 		disableLerpForAllSelectedCards()

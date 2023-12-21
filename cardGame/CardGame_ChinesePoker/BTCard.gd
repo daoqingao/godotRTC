@@ -91,6 +91,8 @@ func initBTCardOwner(isOwnedByCurrentPlayer,ownerPlayerId,directionOrientation,s
 	self.ownerPlayerId = ownerPlayerId
 	self.directionOrientation = directionOrientation
 	self.screenOrientation = screenOrientation
+	if(!self.isOwnedByCurrentPlayer):
+		scaleCardToMiniForOtherPlayers()
 func _physics_process(delta):
 	if(isLerpingToMouse):
 		global_position=lerp(global_position,get_global_mouse_position(),lerpSpeed * delta)
@@ -107,7 +109,7 @@ func _ready():
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	cardTextLabel.text = getShortRankAndSuitString() + "z " + str(z_index) + "l" + str(visibility_layer)
+	# cardTextLabel.text = getShortRankAndSuitString() + "z " + str(z_index) + "l" + str(visibility_layer)
 	pass
 
 
@@ -130,17 +132,17 @@ func setCardRestSnapPos(pos,reason=-1):
 	#use tween to move the card to the restSnapPos
 
 
+func scaleCardToMiniForOtherPlayers():
+	scale = Vector2(.5,.5)
+
+func scaleCardBackToOriginalSize():
+	scale = Vector2(1,1)
+
+
 
 func _to_string():
 	return getShortRankAndSuitString()
-	return "Card ID: %d, Suit: %s, Rank: %s, Is Owned by Player? %s (Player ID: %d), Orientation: %d" % [
-		id,
-		suit,
-		rank,
-		str(isOwnedByCurrentPlayer),
-		ownerPlayerId,
-		directionOrientation,
-	]
+
 
 func getShortRankAndSuitString():
 	return "%s%s" % [
