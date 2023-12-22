@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://bye4nuhc6ppau"]
+
+[ext_resource type="Script" path="res://cardGame/Testing/TestingEnv.gd" id="1_ed435"]
+
+[node name="TestingEnv" type="Node2D"]
+script = ExtResource("1_ed435")
+
+[node name="RayCast2D" type="RayCast2D" parent="."]
+collide_with_areas = true

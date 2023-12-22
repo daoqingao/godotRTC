@@ -1,0 +1,51 @@
+[gd_scene load_steps=5 format=3 uid="uid://uyybxckd7n4u"]
+
+[ext_resource type="Texture2D" uid="uid://ba7uwc7hahidp" path="res://asset/genericItems/genericItem_color_001.png" id="1_0htv2"]
+[ext_resource type="PackedScene" uid="uid://c2vebsq2inor5" path="res://cardGame/CardGame_ChinesePoker/BTCard.tscn" id="2_ev1eu"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_t2t7s"]
+particles_animation = true
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="Environment" id="Environment_5cwqs"]
+background_mode = 2
+background_energy_multiplier = 1.55
+glow_enabled = true
+glow_bloom = 1.0
+glow_blend_mode = 0
+
+[node name="BtPlayerAvatar" type="Node2D"]
+scale = Vector2(1.5, 1.5)
+
+[node name="PlayerName" type="Label" parent="."]
+offset_left = -35.0
+offset_top = 49.0
+offset_right = 62.0
+offset_bottom = 70.0
+scale = Vector2(0.75, 0.75)
+text = "Player Name!"
+
+[node name="PlayerSprite" type="Sprite2D" parent="."]
+material = SubResource("CanvasItemMaterial_t2t7s")
+position = Vector2(0, 33)
+scale = Vector2(0.25, 0.25)
+texture = ExtResource("1_0htv2")
+
+[node name="CardSnapPos" type="Node2D" parent="."]
+position = Vector2(0, -32.6667)
+scale = Vector2(0.5, 0.5)
+
+[node name="BTCards" parent="CardSnapPos" instance=ExtResource("2_ev1eu")]
+visible = false
+position = Vector2(1.52588e-05, 3.05176e-05)
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_5cwqs")

@@ -1,0 +1,188 @@
+[gd_scene load_steps=9 format=3 uid="uid://c2vebsq2inor5"]
+
+[ext_resource type="Script" path="res://cardGame/CardGame_ChinesePoker/BTCard.gd" id="1_7ry17"]
+[ext_resource type="Texture2D" uid="uid://bsl2y1yeya6ps" path="res://asset/CardsLetterNumsTogether/cardSpadesQ.png" id="2_ktyma"]
+[ext_resource type="Texture2D" uid="uid://djq2jjfhy0tw" path="res://asset/CardsLetterNumsTogether/cardBack_blue4.png" id="3_cxmq6"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nh3xx"]
+size = Vector2(138, 186)
+
+[sub_resource type="Animation" id="Animation_wgk4e"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CardFront:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(1, 1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("CardBack:z_index")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [5]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("CardFront:z_index")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [4]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("CardBack:scale")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_b0rqn"]
+resource_name = "card_flip_down"
+length = 0.4
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CardFront:z_index")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [6, 4]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("CardFront:scale")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(0.1, 1), Vector2(1, 1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("CardBack:scale")
+tracks/2/interp = 2
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(0.1, 1), Vector2(1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_g66ya"]
+resource_name = "card_flip_up"
+length = 0.4
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CardFront:z_index")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [4, 6]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("CardFront:scale")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(0.1, 1), Vector2(1, 1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("CardBack:scale")
+tracks/2/interp = 2
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(0.1, 1), Vector2(1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_5nha3"]
+_data = {
+"RESET": SubResource("Animation_wgk4e"),
+"card_flip_down": SubResource("Animation_b0rqn"),
+"card_flip_up": SubResource("Animation_g66ya")
+}
+
+[node name="BTCards" type="Area2D"]
+position = Vector2(80, 56)
+scale = Vector2(1.5, 1.5)
+input_pickable = false
+script = ExtResource("1_7ry17")
+
+[node name="CardControlHandler" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -70.0
+offset_top = -94.6667
+offset_right = -30.0
+offset_bottom = -54.6667
+scale = Vector2(3.49846, 4.71498)
+
+[node name="Label" type="Label" parent="."]
+offset_left = -23.3333
+offset_top = -108.667
+offset_right = 81.6667
+offset_bottom = -85.6667
+scale = Vector2(0.437062, 0.386926)
+text = "card data here"
+
+[node name="CardFront" type="Sprite2D" parent="."]
+z_index = 4
+texture = ExtResource("2_ktyma")
+
+[node name="CardBack" type="Sprite2D" parent="."]
+z_index = 5
+texture = ExtResource("3_cxmq6")
+
+[node name="CardCollision" type="CollisionShape2D" parent="."]
+position = Vector2(-0.333336, 0.333332)
+shape = SubResource("RectangleShape2D_nh3xx")
+
+[node name="FlipCardAnimation" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_5nha3")
+}
+
+[connection signal="gui_input" from="CardControlHandler" to="." method="_on_control_gui_input"]

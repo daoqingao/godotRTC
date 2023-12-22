@@ -1,0 +1,52 @@
+[gd_scene load_steps=3 format=3 uid="uid://1pmkoqmj22ye"]
+
+[ext_resource type="Script" path="res://cardGame/Testing/TestingObj.gd" id="1_bomst"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gk7oh"]
+
+[node name="TestingObj" type="Node2D"]
+position = Vector2(-198, 84)
+script = ExtResource("1_bomst")
+
+[node name="cl" type="CanvasLayer" parent="."]
+
+[node name="Area2D" type="Area2D" parent="cl"]
+y_sort_enabled = true
+position = Vector2(236, 128)
+scale = Vector2(20.7408, 13.7866)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="cl/Area2D"]
+shape = SubResource("RectangleShape2D_gk7oh")
+
+[node name="ColorRect" type="ColorRect" parent="cl/Area2D"]
+y_sort_enabled = true
+offset_left = -10.0
+offset_top = -10.0
+offset_right = 30.0
+offset_bottom = 30.0
+scale = Vector2(0.517201, 0.482553)
+mouse_filter = 1
+
+[node name="Control" type="Control" parent="cl/Area2D"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -9.98034
+offset_top = -10.0097
+offset_right = 30.0197
+offset_bottom = 29.9903
+scale = Vector2(0.507051, 0.482733)
+mouse_filter = 1
+
+[node name="Button" type="Button" parent="cl/Area2D"]
+offset_left = -9.98034
+offset_top = -9.28436
+offset_right = -1.98034
+offset_bottom = -1.28436
+scale = Vector2(2.56885, 2.39809)
+mouse_filter = 1
+
+[node name="CanvasGroup" type="CanvasGroup" parent="cl/Area2D"]
+
+[connection signal="input_event" from="cl/Area2D" to="." method="_on_area_2d_input_event"]
+[connection signal="gui_input" from="cl/Area2D/Control" to="." method="_on_control_gui_input"]
+[connection signal="pressed" from="cl/Area2D/Button" to="." method="_on_button_pressed"]
